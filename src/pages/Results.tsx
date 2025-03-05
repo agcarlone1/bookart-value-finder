@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -8,56 +8,27 @@ import InsightCard from '@/components/ui-custom/InsightCard';
 import TabView from '@/components/ui-custom/TabView';
 import { ArrowLeft, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-// Mock data
-const mockProducts = [
-  {
-    id: '1',
-    name: 'First Edition Harry Potter and the Philosopher\'s Stone',
-    storeName: 'Rare Books Co.',
-    price: 199.99,
-    imageUrl: 'https://images.unsplash.com/photo-1626618012641-bfbca5a31239?q=80&w=400',
-    link: '#'
-  },
-  {
-    id: '2',
-    name: 'Harry Potter and the Philosopher\'s Stone Hardcover',
-    storeName: 'Book Emporium',
-    price: 249.99,
-    imageUrl: 'https://images.unsplash.com/photo-1626618012641-bfbca5a31239?q=80&w=400',
-    link: '#'
-  },
-  {
-    id: '3',
-    name: 'Harry Potter Book Set - Complete Collection',
-    storeName: 'Magic Books',
-    price: 299.99,
-    imageUrl: 'https://images.unsplash.com/photo-1626618012641-bfbca5a31239?q=80&w=400',
-    link: '#'
-  }
-];
+import { useSearch } from '@/contexts/SearchContext';
 
 const Results = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [products, setProducts] = useState<typeof mockProducts>([]);
+  const { searchTerm, searchResults, isSearching } = useSearch();
   
-  useEffect(() => {
-    // Simulate API loading
-    const timer = setTimeout(() => {
-      setProducts(mockProducts);
-      setLoading(false);
-    }, 1500);
+  // Convert string prices to numbers for calculations
+  const products = searchResults || [];
+  
+  const lowestPrice = products.length 
+    ? Math.min(...products.map(p => p.extracted_price)) 
+    : 0;
     
-    return () => clearTimeout(timer);
-  }, []);
-  
-  const lowestPrice = products.length ? Math.min(...products.map(p => p.price)) : 0;
-  const highestPrice = products.length ? Math.max(...products.map(p => p.price)) : 0;
+  const highestPrice = products.length 
+    ? Math.max(...products.map(p => p.extracted_price)) 
+    : 0;
+    
   const priceSpread = highestPrice - lowestPrice;
   
   // Calculate a simple resale potential score (0-100)
-  const resalePotentialScore = products.length 
+  const resalePotentialScore = products.length && lowestPrice > 0
     ? Math.min(100, Math.round((priceSpread / lowestPrice) * 100))
     : 0;
     
@@ -79,6 +50,18 @@ const Results = () => {
     </div>
   );
   
+  // Convert SerpAPI results to our ProductCard format
+  const formatProducts = (results: any[]) => {
+    return results.map(item => ({
+      id: item.position.toString(),
+      name: item.title,
+      storeName: item.source,
+      price: item.extracted_price,
+      imageUrl: item.thumbnail,
+      link: item.link
+    }));
+  };
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -97,41 +80,44 @@ const Results = () => {
             
             <h1 className="text-2xl md:text-3xl font-bold mb-2">Search Results</h1>
             <p className="text-muted-foreground">
-              We found {products.length} matching items for your search
+              {searchTerm ? (
+                <>We found {products.length} matching items for <span className="font-medium">"{searchTerm}"</span></>
+              ) : (
+                "Searching for products..."
+              )}
             </p>
           </div>
           
           <TabView>
             {/* Lowest Price Tab */}
             <div>
-              {loading ? (
+              {isSearching ? (
                 renderSkeletons()
               ) : (
                 <div className="space-y-4 animate-slide-up">
-                  {products
-                    .sort((a, b) => a.price - b.price)
-                    .map((product, index) => (
-                      <ProductCard 
-                        key={product.id} 
-                        product={product}
-                        isBestValue={index === 0}
-                      />
-                    ))
-                  }
-                </div>
-              )}
-              
-              {!loading && products.length === 0 && (
-                <div className="py-12 text-center text-muted-foreground">
-                  <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p>No products found. Please try another search.</p>
+                  {products.length > 0 ? (
+                    formatProducts(products)
+                      .sort((a, b) => a.price - b.price)
+                      .map((product, index) => (
+                        <ProductCard 
+                          key={product.id} 
+                          product={product}
+                          isBestValue={index === 0}
+                        />
+                      ))
+                  ) : (
+                    <div className="py-12 text-center text-muted-foreground">
+                      <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                      <p>No products found. Please try another search.</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
             
             {/* Insights Tab */}
             <div>
-              {loading ? (
+              {isSearching ? (
                 <div className="grid md:grid-cols-3 gap-4">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="rounded-xl border bg-white p-4 animate-pulse">
@@ -147,40 +133,42 @@ const Results = () => {
                   ))}
                 </div>
               ) : (
-                <div className="grid md:grid-cols-3 gap-4 animate-slide-up">
-                  <InsightCard 
-                    type="highest-price" 
-                    value={highestPrice}
-                  />
-                  <InsightCard 
-                    type="price-spread" 
-                    value={priceSpread}
-                  />
-                  <InsightCard 
-                    type="resale-potential" 
-                    value={`${resalePotentialScore}/100`}
-                  />
-                </div>
-              )}
-              
-              {!loading && products.length > 0 && (
-                <div className="mt-8 p-4 rounded-lg bg-secondary/30 border">
-                  <h3 className="font-medium mb-2">What This Means</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Based on our analysis, this item has a 
-                    {resalePotentialScore < 30 ? ' low' : resalePotentialScore < 70 ? ' moderate' : ' high'} 
-                    resale potential. The price spread indicates 
-                    {priceSpread < 50 ? ' limited' : ' significant'} 
-                    arbitrage opportunities across different marketplaces.
-                  </p>
-                </div>
-              )}
-              
-              {!loading && products.length === 0 && (
-                <div className="py-12 text-center text-muted-foreground">
-                  <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p>No insights available. Please try another search.</p>
-                </div>
+                <>
+                  {products.length > 0 ? (
+                    <>
+                      <div className="grid md:grid-cols-3 gap-4 animate-slide-up">
+                        <InsightCard 
+                          type="highest-price" 
+                          value={highestPrice}
+                        />
+                        <InsightCard 
+                          type="price-spread" 
+                          value={priceSpread}
+                        />
+                        <InsightCard 
+                          type="resale-potential" 
+                          value={`${resalePotentialScore}/100`}
+                        />
+                      </div>
+                      
+                      <div className="mt-8 p-4 rounded-lg bg-secondary/30 border">
+                        <h3 className="font-medium mb-2">What This Means</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Based on our analysis, this item has a 
+                          {resalePotentialScore < 30 ? ' low' : resalePotentialScore < 70 ? ' moderate' : ' high'} 
+                          resale potential. The price spread indicates 
+                          {priceSpread < 50 ? ' limited' : ' significant'} 
+                          arbitrage opportunities across different marketplaces.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="py-12 text-center text-muted-foreground">
+                      <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                      <p>No insights available. Please try another search.</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </TabView>

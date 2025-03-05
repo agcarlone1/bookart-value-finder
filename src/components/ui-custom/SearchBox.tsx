@@ -5,34 +5,26 @@ import { Button } from '@/components/ui/button';
 import { Search, Upload, Link, ArrowRight } from 'lucide-react';
 import ImageUploader from './ImageUploader';
 import UrlInput from './UrlInput';
+import { useSearch } from '@/contexts/SearchContext';
 
 interface SearchBoxProps {
   className?: string;
-  onSubmit?: (data: { type: 'image' | 'url', value: string | File }) => void;
 }
 
-const SearchBox: React.FC<SearchBoxProps> = ({ className, onSubmit }) => {
+const SearchBox: React.FC<SearchBoxProps> = ({ className }) => {
   const [activeTab, setActiveTab] = useState<'image' | 'url'>('image');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [url, setUrl] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const { performSearch, isSearching } = useSearch();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if ((activeTab === 'image' && imageFile) || (activeTab === 'url' && url)) {
-      setIsSubmitting(true);
-      
-      // This is where we would call the API
-      onSubmit?.({ 
+      performSearch({ 
         type: activeTab, 
         value: activeTab === 'image' ? (imageFile as File) : url 
       });
-      
-      // In a real app, this would be handled in the onSubmit callback
-      setTimeout(() => {
-        setIsSubmitting(false);
-      }, 1500);
     }
   };
 
@@ -88,12 +80,12 @@ const SearchBox: React.FC<SearchBoxProps> = ({ className, onSubmit }) => {
           type="submit"
           className="w-full py-6 rounded-lg shadow-md flex items-center justify-center gap-2 transition-all duration-300 animate-fade-in"
           disabled={
-            isSubmitting || 
+            isSearching || 
             (activeTab === 'image' && !imageFile) || 
             (activeTab === 'url' && !url)
           }
         >
-          {isSubmitting ? (
+          {isSearching ? (
             <div className="flex items-center gap-2">
               <div className="animate-spin h-5 w-5 border-2 border-white/50 rounded-full border-t-white"></div>
               <span>Searching...</span>

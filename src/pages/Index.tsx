@@ -1,22 +1,11 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import SearchBox from '@/components/ui-custom/SearchBox';
 import { ArrowRight } from 'lucide-react';
 
 const Index = () => {
-  const navigate = useNavigate();
-
-  const handleSearch = (data: { type: 'image' | 'url', value: string | File }) => {
-    // In a real app, you would send the data to the API
-    // For now, we'll just navigate to the results page
-    setTimeout(() => {
-      navigate('/results');
-    }, 1500);
-  };
-
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -32,7 +21,7 @@ const Index = () => {
               Upload an image or paste a link to instantly compare prices and get valuable insights on potential resale value.
             </p>
             
-            <SearchBox onSubmit={handleSearch} />
+            <SearchBox />
           </div>
         </section>
         
