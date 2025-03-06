@@ -9,7 +9,7 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
     // Create form data to send the image file
     const formData = new FormData();
     formData.append('api_key', API_KEY);
-    formData.append('engine', 'google_lens_exact_matches');
+    formData.append('engine', 'google_lens'); // Change engine name here
     formData.append('image_file', imageFile);
     
     // Add lens-specific parameters
@@ -27,7 +27,7 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
     const timeout = createTimeout(40000); // 40 seconds timeout
     
     try {
-      console.log("Making request to Google Lens API with engine: google_lens_exact_matches");
+      console.log("Making request to Google Lens API with engine: google_lens");
       const response = await fetch(`${API_BASE_URL}/search`, {
         method: 'POST',
         body: formData,
@@ -62,27 +62,7 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
         throw new Error(data.error);
       }
       
-      // First, check for book-specific information in exact matches
-      if (data.exact_matches && data.exact_matches.length > 0) {
-        console.log("Found exact matches:", data.exact_matches.length);
-        
-        // Examine exact matches for book indicators
-        for (const match of data.exact_matches) {
-          const title = match.title.toLowerCase();
-          
-          // Check if this is likely a book
-          if (isBookTitle(title)) {
-            console.log("Found book match in exact matches:", match.title);
-            return cleanBookTitle(match.title) + " book";
-          }
-        }
-        
-        // If we didn't find specific book indicators but have exact matches
-        console.log("Using first exact match as search term:", data.exact_matches[0].title);
-        return data.exact_matches[0].title;
-      }
-      
-      // Look for book indicators in visual matches
+      // First, check for visual matches which are the main results in google_lens engine
       if (data.visual_matches && data.visual_matches.length > 0) {
         console.log("Analyzing visual matches:", data.visual_matches.length);
         
@@ -114,6 +94,26 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
         // Fallback to first visual match
         console.log("Using first visual match as search term:", data.visual_matches[0].title);
         return data.visual_matches[0].title;
+      }
+      
+      // Then check for exact matches
+      if (data.exact_matches && data.exact_matches.length > 0) {
+        console.log("Found exact matches:", data.exact_matches.length);
+        
+        // Examine exact matches for book indicators
+        for (const match of data.exact_matches) {
+          const title = match.title.toLowerCase();
+          
+          // Check if this is likely a book
+          if (isBookTitle(title)) {
+            console.log("Found book match in exact matches:", match.title);
+            return cleanBookTitle(match.title) + " book";
+          }
+        }
+        
+        // If we didn't find specific book indicators but have exact matches
+        console.log("Using first exact match as search term:", data.exact_matches[0].title);
+        return data.exact_matches[0].title;
       }
       
       // Try to extract any text visible in the image through OCR data

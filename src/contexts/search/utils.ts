@@ -1,4 +1,3 @@
-
 import { SearchType } from './types';
 import { toast as sonnerToast } from 'sonner';
 import { extractSearchQueryFromImage } from '@/services/api';
@@ -30,7 +29,7 @@ export const processImageSearch = async (imageFile: File): Promise<string> => {
     });
     
     const fileName = imageFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-    return fileName.length > 3 ? fileName : "Unidentified product";
+    return fileName.length > 3 ? fileName + " book" : "Photography book";
   }
 };
 
