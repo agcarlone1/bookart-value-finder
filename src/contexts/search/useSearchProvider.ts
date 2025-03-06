@@ -33,7 +33,7 @@ export const useSearchProvider = () => {
       }
       
       if (!query || query.trim().length < 2) {
-        query = "Unidentified product";
+        query = "Popular books";
       }
       
       setSearchTerm(query);
@@ -90,7 +90,7 @@ export const useSearchProvider = () => {
           });
           
           const mockResponse = await searchProducts({ 
-            query: "popular products"
+            query: "popular books"
           });
           
           setIsMockData(true);
@@ -124,7 +124,7 @@ export const useSearchProvider = () => {
       });
       
       setIsMockData(true);
-      const mockResponse = await searchProducts({ query: 'popular products' });
+      const mockResponse = await searchProducts({ query: 'popular books' });
       setSearchResults(mockResponse.shopping_results);
       navigate('/results');
       

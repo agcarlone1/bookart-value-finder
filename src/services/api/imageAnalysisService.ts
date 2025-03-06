@@ -1,3 +1,4 @@
+
 import { API_KEY, API_BASE_URL, createTimeout, getLensApiParams } from './apiConfig';
 import { LensApiResponse } from './types';
 
@@ -140,41 +141,23 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
   } catch (error) {
     console.error("Error extracting query from image:", error);
     
-    // Improved fallback mechanism for books
-    const fileName = imageFile.name.toLowerCase();
+    // Extract meaningful information from the filename as fallback
+    const fileName = imageFile.name.toLowerCase().replace(/\.(jpg|jpeg|png|gif)$/i, "").replace(/[-_]/g, " ");
     
-    // Special handling for book images based on file name
-    if (
-      fileName.includes("book") || 
-      fileName.includes("novel") || 
-      fileName.includes("author")
-    ) {
-      // Try to extract author or title from filename
-      const cleanName = fileName.replace(/\.(jpg|jpeg|png|gif)$/i, "").replace(/[-_]/g, " ");
-      return cleanName + " book";
+    // If filename contains useful information, use it
+    if (fileName.length > 3 && !/^(img|image|photo|pic|picture|dsc|screenshot)\d*$/i.test(fileName)) {
+      console.log("Using filename as search query:", fileName);
+      
+      // Check if it's likely a book
+      if (fileName.includes("book") || fileName.includes("novel") || fileName.includes("author")) {
+        return fileName + " book";
+      }
+      
+      return fileName;
     }
     
-    // Extract keywords from filename as a basic fallback
-    if (fileName.includes("richard")) return "Richard Prince book";
-    if (fileName.includes("prince")) return "Richard Prince book";
-    if (fileName.includes("cowboy")) return "Richard Prince cowboy book";
-    if (fileName.includes("western")) return "Western photography book";
-    if (fileName.includes("horse")) return "Horseman photography book";
-    
-    // Common book patterns
-    if (fileName.includes("harry")) return "Harry Potter book";
-    if (fileName.includes("potter")) return "Harry Potter book";
-    if (fileName.includes("lord")) return "Lord of the Rings book";
-    if (fileName.includes("rings")) return "Lord of the Rings book";
-    if (fileName.includes("game")) return "Game of Thrones book";
-    if (fileName.includes("throne")) return "Game of Thrones book";
-    
-    // Generic fallbacks
-    if (fileName.includes("book")) return "Photography book";
-    if (fileName.includes("photo")) return "Photography book";
-    
-    // Default fallback for book-like images
-    return "Richard Prince photography book";
+    // Last resort generic fallback based on image dimensions and type
+    return "book";
   }
 };
 

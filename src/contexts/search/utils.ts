@@ -1,3 +1,4 @@
+
 import { SearchType } from './types';
 import { toast as sonnerToast } from 'sonner';
 import { extractSearchQueryFromImage } from '@/services/api';
@@ -28,15 +29,23 @@ export const processImageSearch = async (imageFile: File): Promise<string> => {
       description: error instanceof Error ? error.message : 'Failed to analyze image',
     });
     
+    // Extract meaningful information from the filename
     const fileName = imageFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
     
-    if (fileName.toLowerCase().includes('book') || 
-        fileName.toLowerCase().includes('novel') || 
-        fileName.toLowerCase().includes('author')) {
-      return fileName + " book";
+    // If the filename contains useful information, use it
+    if (fileName.length > 3 && !/^(img|image|photo|pic|picture|dsc|screenshot)\d*$/i.test(fileName)) {
+      // Check if it's likely a book
+      if (fileName.toLowerCase().includes('book') || 
+          fileName.toLowerCase().includes('novel') || 
+          fileName.toLowerCase().includes('author')) {
+        return fileName + " book";
+      }
+      
+      return fileName;
     }
     
-    return fileName.length > 3 ? fileName : "Photography book";
+    // Generic fallback with no hard-coded references to specific books
+    return "popular books";
   }
 };
 
@@ -73,6 +82,12 @@ export const handleSearchError = async (error: any, value: string | File): Promi
     duration: 5000,
   });
   
-  const searchQuery = typeof value === 'string' ? value.substring(0, 50) : 'sample product';
+  // Construct generic search query without hardcoding specific products
+  const searchQuery = typeof value === 'string' 
+    ? value.substring(0, 50) 
+    : (value instanceof File ? 
+        (value.name.length > 5 ? value.name.replace(/\.[^/.]+$/, "") : "popular products") 
+        : "popular products");
+  
   return { searchQuery, useMockData: true };
 };
