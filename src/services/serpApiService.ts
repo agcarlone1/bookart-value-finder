@@ -1,3 +1,4 @@
+
 // A service for interacting with SerpAPI
 
 interface SerpApiResponse {
@@ -27,6 +28,32 @@ interface SerpApiResponse {
     extracted_price: number;
     thumbnail: string;
     delivery: string;
+  }[];
+  error?: string;
+}
+
+interface LensApiResponse {
+  search_metadata: {
+    id: string;
+    status: string;
+    json_endpoint: string;
+    created_at: string;
+    processed_at: string;
+  };
+  search_parameters: {
+    engine: string;
+  };
+  exact_matches?: {
+    title: string;
+    link: string;
+    thumbnail: string;
+    source: string;
+  }[];
+  visual_matches?: {
+    title: string;
+    link: string;
+    thumbnail: string;
+    source: string;
   }[];
   error?: string;
 }
@@ -178,13 +205,63 @@ function getMockData(query: string, errorMessage: string): SerpApiResponse {
 
 export const extractSearchQueryFromImage = async (imageFile: File): Promise<string> => {
   try {
-    // For actual implementation, you would:
-    // 1. Upload the image to a server or directly to a vision API
-    // 2. Get text recognition results
-    // 3. Return the extracted text or relevant keywords
+    console.log("Sending image to Google Lens API via SerpAPI");
     
-    // This is a simplified implementation that reads the file name
-    // In a production app, you would use a vision API like Google Vision, AWS Rekognition, etc.
+    // Create form data to send the image file
+    const formData = new FormData();
+    formData.append('api_key', API_KEY);
+    formData.append('engine', 'google_lens_exact_matches');
+    formData.append('image_file', imageFile);
+    
+    // Reduce the timeout to 20 seconds to avoid long waits
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 seconds timeout
+    
+    try {
+      const response = await fetch('https://serpapi.com/search', {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        console.error(`API error: ${response.status} ${response.statusText}`);
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data: LensApiResponse = await response.json();
+      
+      console.log('Google Lens API response received:', data);
+      
+      // If the API returns an error field, throw an error
+      if (data.error) {
+        console.error('Google Lens API error:', data.error);
+        throw new Error(data.error);
+      }
+      
+      // Extract product name from the exact matches
+      if (data.exact_matches && data.exact_matches.length > 0) {
+        // Use the title of the first exact match as the search query
+        return data.exact_matches[0].title;
+      } else if (data.visual_matches && data.visual_matches.length > 0) {
+        // Fallback to visual matches if no exact matches
+        return data.visual_matches[0].title;
+      }
+      
+      // If no matches found, return a generic query
+      return "Unidentified product";
+      
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error; // Rethrow to be caught by the outer try/catch
+    }
+    
+  } catch (error) {
+    console.error("Error extracting query from image:", error);
+    
+    // For errors, provide a fallback mechanism by extracting keywords from the filename
     const fileName = imageFile.name.toLowerCase();
     
     // Extract keywords from filename as a basic fallback
@@ -192,13 +269,8 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
     if (fileName.includes("lord")) return "Lord of the Rings book";
     if (fileName.includes("game")) return "Game of Thrones book";
     
-    // For a real implementation, you would send the image to a vision API
-    console.log("In production, this would use a vision API to analyze the image");
-    
-    // Default fallback - in production, this would be text extracted from the image
-    return "Vintage book collection";
-  } catch (error) {
-    console.error("Error extracting query from image:", error);
-    return "Book collection"; // Default query on error
+    // Default fallback
+    return "Unidentified product";
   }
 };
+

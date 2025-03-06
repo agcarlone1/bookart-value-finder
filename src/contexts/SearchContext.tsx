@@ -38,7 +38,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       
       // Handle different search types
       if (data.type === 'image' && data.value instanceof File) {
-        sonnerToast.loading('Analyzing image...', {
+        sonnerToast.loading('Analyzing image with Google Lens...', {
           id: 'image-analysis',
         });
         
