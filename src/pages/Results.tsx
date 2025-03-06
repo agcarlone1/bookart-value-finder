@@ -18,7 +18,7 @@ const Results = () => {
     <div className="flex flex-col min-h-screen">
       <Header />
       
-      <main className="flex-grow py-4 px-4">
+      <main className="flex-grow py-6 px-4">
         <div className="container mx-auto max-w-7xl">
           <SearchBanner 
             searchTerm={searchTerm} 
@@ -28,12 +28,12 @@ const Results = () => {
           
           <TabView tabs={["Lowest Price", "Insights"]}>
             {/* Lowest Price Tab */}
-            <div>
+            <div className="pt-2">
               <ProductList products={products} isSearching={isSearching} />
             </div>
             
             {/* Insights Tab */}
-            <div>
+            <div className="pt-2">
               <InsightsPanel products={products} isSearching={isSearching} />
             </div>
           </TabView>

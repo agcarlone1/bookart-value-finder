@@ -27,7 +27,7 @@ const ProductList = ({ products, isSearching }: ProductListProps) => {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 animate-slide-up">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 animate-slide-up">
       {products.length > 0 ? (
         formatProducts(products)
           .sort((a, b) => a.price - b.price)
@@ -36,6 +36,7 @@ const ProductList = ({ products, isSearching }: ProductListProps) => {
               key={product.id} 
               product={product}
               isBestValue={index === 0}
+              className="h-full"
             />
           ))
       ) : (
