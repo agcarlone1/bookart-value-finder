@@ -12,10 +12,12 @@ export const fetchImageSearchResults = async (
   imageUrl: string
 ): Promise<LensApiResponse> => {
   try {
-    console.log('Sending request to backend API:', `${API_URL}/google-lens`);
+    // Make sure we're using the correct endpoint path
+    const endpoint = `${API_URL}/google-lens`;
+    console.log('Sending request to backend API:', endpoint);
     console.log('Request payload:', { imageUrl: imageUrl.substring(0, 50) + '...' });
     
-    const response = await fetch(`${API_URL}/google-lens`, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -98,7 +98,7 @@ export const fetchGoogleLensResults = async (imageUrl: string): Promise<LensApiR
 
 // Create an Express.js route handler or serverless function
 // This would be implemented in your backend server code
-export const handleGoogleLensRequest = async (req: any, res: any) => {
+export const handleGoogleLensRequest = async (req, res) => {
   try {
     console.log('Server: Lens API request received');
     const { imageUrl } = req.body;
