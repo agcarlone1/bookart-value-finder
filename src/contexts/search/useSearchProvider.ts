@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+
+import { useState, useCallback } from 'react';
 import { ShoppingResult, SearchOptions } from '@/services/api/types';
 import { searchShoppingResults } from '@/services/api/shoppingSearchService';
 import { toast } from "@/components/ui/use-toast"
@@ -154,26 +155,18 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
         variant: 'destructive'
       });
     }
-  }, [handleTextSearch, handleImageSearch]);
+  }, [handleTextSearch]);
 
-  return (
-    <SearchContext.Provider
-      value={{
-        searchTerm,
-        searchResults,
-        isSearching,
-        isMockData,
-        performSearch,
-        setSearchTerm,
-        setSearchResults,
-        setIsMockData,
-      }}
-    >
-      {children}
-    </SearchContext.Provider>
-  );
+  return {
+    searchTerm,
+    searchResults,
+    isSearching,
+    isMockData,
+    performSearch,
+    setSearchTerm,
+    setSearchResults,
+    setIsMockData,
+  };
 };
 
-const useSearch = () => useContext(SearchContext);
-
-export { useSearchProvider as SearchProvider, useSearch };
+export { useSearchProvider, SearchContext };
