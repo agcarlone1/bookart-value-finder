@@ -14,6 +14,7 @@ interface SearchContextType {
   searchResults: any[] | null;
   performSearch: (data: { type: SearchType, value: string | File }) => Promise<void>;
   clearSearch: () => void;
+  isMockData: boolean;
 }
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
@@ -23,6 +24,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [searchType, setSearchType] = useState<SearchType>('image');
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<any[] | null>(null);
+  const [isMockData, setIsMockData] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -30,6 +32,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     try {
       setIsSearching(true);
       setSearchType(data.type);
+      setIsMockData(false);
       
       let query = '';
       
@@ -62,43 +65,35 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       // Perform the actual search
       const response = await searchProducts({ query });
       
-      if (response.error) {
-        console.error("Search error from API:", response.error);
-        
-        sonnerToast.error('Search failed', {
+      // Check if we're using mock data
+      if (response.search_metadata.status === 'Success (Mock)') {
+        setIsMockData(true);
+        sonnerToast.info('Using demo data', {
           id: 'search',
-          description: response.error,
+          description: 'Due to API limitations, we\'re showing sample results',
+        });
+      } else {
+        sonnerToast.success('Search completed', {
+          id: 'search',
+          description: `Found ${response.shopping_results.length} results`,
+        });
+      }
+      
+      if (response.shopping_results && response.shopping_results.length > 0) {
+        setSearchResults(response.shopping_results);
+        navigate('/results');
+      } else {
+        sonnerToast.error('No results found', {
+          id: 'search',
+          description: 'Please try a different search query',
         });
         
         toast({
-          title: "Search Error",
-          description: response.error,
+          title: "No Results",
+          description: "We couldn't find any products matching your search.",
           variant: "destructive"
         });
-        
-        // If we got mock data despite an error, we can still show results
-        if (response.shopping_results && response.shopping_results.length > 0) {
-          sonnerToast.info('Using demo data', {
-            description: 'Due to API limitations, we\'re showing sample results',
-          });
-          
-          setSearchResults(response.shopping_results);
-          navigate('/results');
-        }
-        
-        return;
       }
-      
-      // Success case
-      sonnerToast.success('Search completed', {
-        id: 'search',
-        description: `Found ${response.shopping_results.length} results`,
-      });
-      
-      setSearchResults(response.shopping_results);
-      
-      // Navigate to results page
-      navigate('/results');
     } catch (error) {
       console.error('Search error:', error);
       
@@ -109,7 +104,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       
       toast({
         title: "Search Failed",
-        description: "We encountered a network error. Switching to demo mode.",
+        description: "We encountered a network error. Please try again later.",
         variant: "destructive"
       });
     } finally {
@@ -120,6 +115,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const clearSearch = () => {
     setSearchTerm('');
     setSearchResults(null);
+    setIsMockData(false);
   };
 
   return (
@@ -129,7 +125,8 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       isSearching,
       searchResults,
       performSearch,
-      clearSearch
+      clearSearch,
+      isMockData
     }}>
       {children}
     </SearchContext.Provider>

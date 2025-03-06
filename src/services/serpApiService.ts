@@ -1,4 +1,3 @@
-
 // A service for interacting with SerpAPI
 
 interface SerpApiResponse {
@@ -51,152 +50,131 @@ export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Prom
 
     console.log('Fetching from SerpAPI with query:', query);
     
-    // Use a proxy approach with a timeout
+    // Reduce the timeout to 10 seconds to avoid long waits
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
     
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      signal: controller.signal,
-      mode: 'cors', // Explicitly set CORS mode
-    });
-    
-    clearTimeout(timeoutId);
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    console.log('SerpAPI response received');
-    
-    // If the API returns an error field, maintain the error structure
-    if (data.error) {
-      console.error('SerpAPI error:', data.error);
-      return {
-        search_metadata: {
-          id: '',
-          status: 'Error',
-          json_endpoint: '',
-          created_at: new Date().toISOString(),
-          processed_at: new Date().toISOString(),
-          google_url: '',
-          raw_html_file: '',
-          total_time_taken: 0
+    try {
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        search_parameters: {
-          engine: 'google_shopping',
-          q: query,
-          google_domain: 'google.com',
-          gl: 'us',
-          hl: 'en'
-        },
-        shopping_results: [],
-        error: data.error
-      };
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        console.error(`API error: ${response.status} ${response.statusText}`);
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      console.log('SerpAPI response received');
+      
+      // If the API returns an error field, maintain the error structure
+      if (data.error) {
+        console.error('SerpAPI error:', data.error);
+        return getMockData(query, data.error);
+      }
+      
+      // Limit the results if requested
+      if (data.shopping_results && limit) {
+        data.shopping_results = data.shopping_results.slice(0, limit);
+      }
+      
+      return data;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error; // Rethrow to be caught by the outer try/catch
     }
-    
-    // Limit the results if requested
-    if (data.shopping_results && limit) {
-      data.shopping_results = data.shopping_results.slice(0, limit);
-    }
-    
-    return data;
     
   } catch (error) {
     console.error("Error fetching from SerpAPI:", error);
     
     // For network errors, provide mock data for testing
-    if (error instanceof Error && 
-        (error.message.includes('Failed to fetch') || 
-         error.message.includes('NetworkError') ||
-         error.message.includes('Network request failed') ||
-         error.name === 'AbortError')) {
-      
-      console.log("Using mock data due to network/CORS error");
-      
-      // Return mock data for demonstration purposes
-      return {
-        search_metadata: {
-          id: 'mock-id',
-          status: 'Success (Mock)',
-          json_endpoint: '',
-          created_at: new Date().toISOString(),
-          processed_at: new Date().toISOString(),
-          google_url: '',
-          raw_html_file: '',
-          total_time_taken: 0
-        },
-        search_parameters: {
-          engine: 'google_shopping',
-          q: query,
-          google_domain: 'google.com',
-          gl: 'us',
-          hl: 'en'
-        },
-        shopping_results: [
-          {
-            position: 1,
-            title: "Vintage Book Collection (Mock Data)",
-            link: "https://example.com/product1",
-            source: "Example Store",
-            price: "$24.99",
-            extracted_price: 24.99,
-            thumbnail: "https://picsum.photos/200/300",
-            delivery: "Free shipping"
-          },
-          {
-            position: 2,
-            title: "Classic Literature Set (Mock Data)",
-            link: "https://example.com/product2",
-            source: "Book Store",
-            price: "$34.99",
-            extracted_price: 34.99,
-            thumbnail: "https://picsum.photos/200/301",
-            delivery: "Free shipping"
-          },
-          {
-            position: 3,
-            title: "Antique Book Collection (Mock Data)",
-            link: "https://example.com/product3",
-            source: "Vintage Books",
-            price: "$129.99",
-            extracted_price: 129.99,
-            thumbnail: "https://picsum.photos/200/302",
-            delivery: "$4.99 shipping"
-          }
-        ]
-      };
-    }
-    
-    // Return a structured error response
-    return {
-      search_metadata: {
-        id: '',
-        status: 'Error',
-        json_endpoint: '',
-        created_at: new Date().toISOString(),
-        processed_at: new Date().toISOString(),
-        google_url: '',
-        raw_html_file: '',
-        total_time_taken: 0
-      },
-      search_parameters: {
-        engine: 'google_shopping',
-        q: query,
-        google_domain: 'google.com',
-        gl: 'us',
-        hl: 'en'
-      },
-      shopping_results: [],
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    };
+    return getMockData(query, error instanceof Error ? error.message : 'Unknown error');
   }
 };
+
+// Separate function to get mock data to avoid code duplication
+function getMockData(query: string, errorMessage: string): SerpApiResponse {
+  console.log("Using mock data due to error:", errorMessage);
+  
+  return {
+    search_metadata: {
+      id: 'mock-id',
+      status: 'Success (Mock)',
+      json_endpoint: '',
+      created_at: new Date().toISOString(),
+      processed_at: new Date().toISOString(),
+      google_url: '',
+      raw_html_file: '',
+      total_time_taken: 0
+    },
+    search_parameters: {
+      engine: 'google_shopping',
+      q: query,
+      google_domain: 'google.com',
+      gl: 'us',
+      hl: 'en'
+    },
+    shopping_results: [
+      {
+        position: 1,
+        title: `${query} - Premium Collection (Mock Data)`,
+        link: "https://example.com/product1",
+        source: "Example Store",
+        price: "$24.99",
+        extracted_price: 24.99,
+        thumbnail: "https://picsum.photos/200/300",
+        delivery: "Free shipping"
+      },
+      {
+        position: 2,
+        title: `${query} - Deluxe Set (Mock Data)`,
+        link: "https://example.com/product2",
+        source: "Book Store",
+        price: "$34.99",
+        extracted_price: 34.99,
+        thumbnail: "https://picsum.photos/200/301",
+        delivery: "Free shipping"
+      },
+      {
+        position: 3,
+        title: `${query} - Special Edition (Mock Data)`,
+        link: "https://example.com/product3",
+        source: "Vintage Shop",
+        price: "$129.99",
+        extracted_price: 129.99,
+        thumbnail: "https://picsum.photos/200/302",
+        delivery: "$4.99 shipping"
+      },
+      {
+        position: 4,
+        title: `${query} - Budget Option (Mock Data)`,
+        link: "https://example.com/product4",
+        source: "Discount Store",
+        price: "$19.99",
+        extracted_price: 19.99,
+        thumbnail: "https://picsum.photos/200/303",
+        delivery: "$2.99 shipping"
+      },
+      {
+        position: 5,
+        title: `${query} - Limited Edition (Mock Data)`,
+        link: "https://example.com/product5",
+        source: "Collector's Market",
+        price: "$149.99",
+        extracted_price: 149.99,
+        thumbnail: "https://picsum.photos/200/304",
+        delivery: "Free shipping"
+      }
+    ]
+  };
+}
 
 export const extractSearchQueryFromImage = async (imageFile: File): Promise<string> => {
   try {

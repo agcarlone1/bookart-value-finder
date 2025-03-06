@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -5,13 +6,14 @@ import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/ui-custom/ProductCard';
 import InsightCard from '@/components/ui-custom/InsightCard';
 import TabView from '@/components/ui-custom/TabView';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Search, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSearch } from '@/contexts/SearchContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Results = () => {
   const navigate = useNavigate();
-  const { searchTerm, searchResults, isSearching } = useSearch();
+  const { searchTerm, searchResults, isSearching, isMockData } = useSearch();
   
   // Convert string prices to numbers for calculations
   const products = searchResults || [];
@@ -88,6 +90,15 @@ const Results = () => {
               )}
             </p>
           </div>
+          
+          {isMockData && (
+            <Alert className="mb-4 bg-amber-50 text-amber-800 border-amber-200">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Using demo data due to API limitations. In a production environment, you would see real product data.
+              </AlertDescription>
+            </Alert>
+          )}
           
           <TabView>
             {/* Lowest Price Tab */}
