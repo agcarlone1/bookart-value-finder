@@ -72,6 +72,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({ className }) => {
             <UrlInput 
               value={url} 
               onChange={(e) => setUrl(e.target.value)}
+              onEnterPress={handleSubmit}
             />
           )}
         </div>

@@ -1,14 +1,22 @@
 
-import React from 'react';
+import React, { KeyboardEvent } from 'react';
 import { Link } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 
 interface UrlInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   className?: string;
+  onEnterPress?: () => void;
 }
 
-const UrlInput: React.FC<UrlInputProps> = ({ className, ...props }) => {
+const UrlInput: React.FC<UrlInputProps> = ({ className, onEnterPress, ...props }) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && onEnterPress) {
+      e.preventDefault();
+      onEnterPress();
+    }
+  };
+
   return (
     <div className="w-full space-y-4 animate-fade-in">
       <div className="flex items-center justify-center">
@@ -30,6 +38,7 @@ const UrlInput: React.FC<UrlInputProps> = ({ className, ...props }) => {
             "pl-10 py-6 rounded-lg border-input focus:border-primary transition-all duration-300",
             className
           )}
+          onKeyDown={handleKeyDown}
           {...props}
         />
         <Link 
