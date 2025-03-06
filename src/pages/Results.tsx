@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -26,6 +25,11 @@ const Results = () => {
     : 0;
     
   const priceSpread = highestPrice - lowestPrice;
+  
+  // Calculate average price
+  const averagePrice = products.length
+    ? products.reduce((sum, p) => sum + p.extracted_price, 0) / products.length
+    : 0;
   
   // Calculate a simple resale potential score (0-100)
   const resalePotentialScore = products.length && lowestPrice > 0
@@ -115,8 +119,8 @@ const Results = () => {
             {/* Insights Tab */}
             <div>
               {isSearching ? (
-                <div className="grid md:grid-cols-3 gap-4">
-                  {[1, 2, 3].map((i) => (
+                <div className="grid md:grid-cols-4 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="rounded-xl border bg-white p-4 animate-pulse">
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-lg bg-secondary"></div>
@@ -133,7 +137,11 @@ const Results = () => {
                 <>
                   {products.length > 0 ? (
                     <>
-                      <div className="grid md:grid-cols-3 gap-4 animate-slide-up">
+                      <div className="grid md:grid-cols-4 gap-4 animate-slide-up">
+                        <InsightCard 
+                          type="average-price" 
+                          value={averagePrice}
+                        />
                         <InsightCard 
                           type="highest-price" 
                           value={highestPrice}
@@ -153,7 +161,7 @@ const Results = () => {
                         <p className="text-sm text-muted-foreground">
                           Based on our analysis, this item has a 
                           {resalePotentialScore < 30 ? ' low' : resalePotentialScore < 70 ? ' moderate' : ' high'} 
-                          resale potential. The price spread indicates 
+                          resale potential. The average price is ${averagePrice.toFixed(2)}, while the price spread indicates 
                           {priceSpread < 50 ? ' limited' : ' significant'} 
                           arbitrage opportunities across different marketplaces.
                         </p>

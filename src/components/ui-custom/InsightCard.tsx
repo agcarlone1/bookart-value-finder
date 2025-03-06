@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Gem } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Gem, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InsightCardProps {
-  type: 'highest-price' | 'price-spread' | 'resale-potential';
+  type: 'highest-price' | 'price-spread' | 'resale-potential' | 'average-price';
   value: number | string;
   className?: string;
 }
@@ -18,6 +18,8 @@ const InsightCard: React.FC<InsightCardProps> = ({ type, value, className }) => 
         return <DollarSign className="h-5 w-5 text-emerald-500" />;
       case 'resale-potential':
         return <Gem className="h-5 w-5 text-primary" />;
+      case 'average-price':
+        return <BarChart3 className="h-5 w-5 text-blue-500" />;
       default:
         return null;
     }
@@ -31,6 +33,8 @@ const InsightCard: React.FC<InsightCardProps> = ({ type, value, className }) => 
         return 'Price Spread';
       case 'resale-potential':
         return 'Resale Potential Score';
+      case 'average-price':
+        return 'Average Price';
       default:
         return '';
     }
@@ -44,6 +48,8 @@ const InsightCard: React.FC<InsightCardProps> = ({ type, value, className }) => 
         return 'Difference between highest and lowest price';
       case 'resale-potential':
         return 'Estimated profit potential based on price distribution';
+      case 'average-price':
+        return 'Mean price across all available listings';
       default:
         return '';
     }
