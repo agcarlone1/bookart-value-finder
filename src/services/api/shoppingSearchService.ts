@@ -24,6 +24,7 @@ export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Prom
     const timeout = createTimeout(30000); // 30 seconds timeout
     
     try {
+      console.log('Starting fetch request with headers:', getRequestOptions(timeout.signal).headers);
       const response = await fetch(finalUrl, {
         ...getRequestOptions(timeout.signal)
       });
@@ -60,6 +61,16 @@ export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Prom
       return data;
     } catch (error) {
       timeout.clear();
+      
+      // Log the detailed error
+      if (error instanceof Error) {
+        console.error('Fetch error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack
+        });
+      }
+      
       throw error; // Rethrow to be caught by the outer try/catch
     }
     
@@ -68,7 +79,9 @@ export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Prom
     
     // Check if we should return mock data
     if (shouldReturnMockData(error)) {
-      return getMockData(query, error instanceof Error ? error.message : 'Unknown error');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.log(`Using mock data due to: ${errorMessage}`);
+      return getMockData(query, errorMessage);
     }
     
     // Otherwise, throw the error
