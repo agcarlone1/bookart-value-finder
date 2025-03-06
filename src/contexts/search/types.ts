@@ -1,17 +1,15 @@
 
-export type SearchType = 'image' | 'url';
+import { ShoppingResult } from '@/services/api/types';
+
+export type SearchType = 'text' | 'image' | 'url';
 
 export interface SearchContextType {
   searchTerm: string;
-  searchType: SearchType;
+  searchResults: ShoppingResult[] | null;
   isSearching: boolean;
-  searchResults: any[] | null;
-  performSearch: (data: { type: SearchType, value: string | File }) => Promise<void>;
-  clearSearch: () => void;
   isMockData: boolean;
-}
-
-export interface SearchData {
-  type: SearchType;
-  value: string | File;
+  performSearch: (searchOptions: { type: SearchType, value: string | File }) => Promise<void>;
+  setSearchTerm: (term: string) => void;
+  setSearchResults: (results: ShoppingResult[]) => void;
+  setIsMockData: (isMock: boolean) => void;
 }

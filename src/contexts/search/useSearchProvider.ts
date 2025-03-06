@@ -1,7 +1,6 @@
-
 import { useState, useCallback } from 'react';
 import { ShoppingResult, SearchOptions } from '@/services/api/types';
-import { searchShoppingResults } from '@/services/api/shoppingSearchService';
+import { searchProducts } from '@/services/api/shoppingSearchService';
 import { toast } from "@/components/ui/use-toast"
 import { USE_MOCK_DATA } from '@/services/api/apiConfig';
 import { mockSearchResults } from '@/services/api/mockData';
@@ -17,17 +16,6 @@ interface SearchContextProps {
   setSearchResults: (results: ShoppingResult[]) => void;
   setIsMockData: (isMock: boolean) => void;
 }
-
-const SearchContext = createContext<SearchContextProps>({
-  searchTerm: '',
-  searchResults: null,
-  isSearching: false,
-  isMockData: false,
-  performSearch: async () => { },
-  setSearchTerm: () => { },
-  setSearchResults: () => { },
-  setIsMockData: () => { },
-});
 
 interface SearchProviderProps {
   children: React.ReactNode;
@@ -70,8 +58,8 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
         return mockSearchResults;
       }
 
-      const results = await searchShoppingResults(query, options);
-      return results;
+      const results = await searchProducts({ query, ...(options || {}) });
+      return results.shopping_results || [];
     } catch (error) {
       console.error('Search error:', error);
       toast({
@@ -169,4 +157,4 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
   };
 };
 
-export { useSearchProvider, SearchContext };
+export { useSearchProvider };
