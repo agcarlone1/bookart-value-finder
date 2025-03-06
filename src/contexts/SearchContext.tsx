@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
-import { searchProducts, extractSearchQueryFromImage } from '@/services/serpApiService';
+import { searchProducts, extractSearchQueryFromImage } from '@/services/api';
 import { useWishlist } from './WishlistContext';
 
 type SearchType = 'image' | 'url';

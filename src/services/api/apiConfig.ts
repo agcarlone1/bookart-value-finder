@@ -1,0 +1,47 @@
+
+// Shared configuration and utilities for API services
+
+// This should ideally be stored in environment variables
+// But this is a publishable key for SerpAPI that can be safely included in the code
+export const API_KEY = '4bce77d816528a3073a7ff2607e3cb2b3ff477cfc43bc5bbca830353830ab7f6';
+
+// Use production API endpoint
+export const API_BASE_URL = 'https://serpapi.com';
+
+// Common request configuration
+export const getRequestOptions = (signal: AbortSignal) => ({
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  },
+  signal,
+  cache: 'no-store',
+  mode: 'cors' as RequestMode,
+});
+
+// Common timeout handler
+export const createTimeout = (ms: number) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ms);
+  
+  return {
+    controller,
+    timeoutId,
+    signal: controller.signal,
+    clear: () => clearTimeout(timeoutId)
+  };
+};
+
+// Common error handling
+export const handleApiError = (error: unknown): never => {
+  console.error("API Error:", error);
+  if (error instanceof Error) {
+    throw error;
+  } else {
+    throw new Error(String(error));
+  }
+};
