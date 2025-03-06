@@ -25,12 +25,44 @@ export const fetchImageSearchResults = async (
 
     console.log('Response status:', response.status, response.statusText);
     
+    // Check if the response is ok (status in the range 200-299)
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('API error response:', errorData);
-      throw new Error(errorData.message || `Failed to fetch search results (${response.status})`);
+      // Try to get error details, but handle the case where response might be empty
+      let errorMessage = `Failed to fetch search results (${response.status})`;
+      let responseText = '';
+      
+      try {
+        // Get the raw response text first
+        responseText = await response.text();
+        console.log('Raw error response:', responseText);
+        
+        // Only try to parse it as JSON if it's not empty and looks like JSON
+        if (responseText && (responseText.startsWith('{') || responseText.startsWith('['))) {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorMessage;
+        } else {
+          // If it's not JSON, use the raw text if available
+          errorMessage = responseText || errorMessage;
+        }
+      } catch (parseError) {
+        console.error('Failed to parse error response:', parseError);
+        // Use the raw response text if JSON parsing failed
+        errorMessage = responseText || errorMessage;
+      }
+      
+      console.error('API error response:', errorMessage);
+      throw new Error(errorMessage);
     }
 
+    // Check if the response has content before parsing
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const rawText = await response.text();
+      console.log('Unexpected response format:', rawText);
+      throw new Error('API response is not JSON');
+    }
+    
+    // Now we can safely parse the JSON
     const data = await response.json();
     console.log('API response received successfully', { 
       metadata: data.search_metadata,

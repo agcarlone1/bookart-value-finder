@@ -34,9 +34,35 @@ export const fetchGoogleLensResults = async (imageUrl: string): Promise<LensApiR
     console.log('Server: SERPAPI response status:', response.status, response.statusText);
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Server: SERPAPI request failed:', response.status, errorText);
-      throw new Error(`SERPAPI request failed: ${response.status} ${errorText}`);
+      // Get the raw response text for better error reporting
+      const rawResponse = await response.text();
+      console.error('Server: SERPAPI request failed. Raw response:', rawResponse);
+      
+      let errorMessage = `SERPAPI request failed: ${response.status}`;
+      
+      // Try to parse as JSON if it looks like JSON
+      if (rawResponse && (rawResponse.startsWith('{') || rawResponse.startsWith('['))) {
+        try {
+          const errorData = JSON.parse(rawResponse);
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          // Use raw text if JSON parsing fails
+          errorMessage = rawResponse || errorMessage;
+        }
+      } else if (rawResponse) {
+        // If not JSON, use the raw text
+        errorMessage = rawResponse;
+      }
+      
+      throw new Error(errorMessage);
+    }
+    
+    // Check if there's content and it's JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const rawText = await response.text();
+      console.log('Server: Unexpected response format:', rawText);
+      throw new Error('SERPAPI response is not JSON');
     }
     
     const data = await response.json();

@@ -96,6 +96,22 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
     
       if (response.error) {
         console.error('API returned error:', response.error);
+        
+        // Display a more user-friendly error message based on the error
+        let userMessage = 'Failed to search image.';
+        
+        if (response.error.includes('404')) {
+          userMessage = 'The API endpoint (/api/google-lens) was not found. Make sure your backend server is running and properly configured.';
+        } else if (response.error.includes('Unexpected end of JSON')) {
+          userMessage = 'The server returned an empty or invalid response. Check your server logs for more details.';
+        }
+        
+        toast({
+          title: 'API Error',
+          description: userMessage,
+          variant: 'destructive'
+        });
+        
         throw new Error(response.error);
       }
     
