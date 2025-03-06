@@ -63,6 +63,8 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       const response = await searchProducts({ query });
       
       if (response.error) {
+        console.error("Search error from API:", response.error);
+        
         sonnerToast.error('Search failed', {
           id: 'search',
           description: response.error,
@@ -73,9 +75,21 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           description: response.error,
           variant: "destructive"
         });
+        
+        // If we got mock data despite an error, we can still show results
+        if (response.shopping_results && response.shopping_results.length > 0) {
+          sonnerToast.info('Using demo data', {
+            description: 'Due to API limitations, we\'re showing sample results',
+          });
+          
+          setSearchResults(response.shopping_results);
+          navigate('/results');
+        }
+        
         return;
       }
       
+      // Success case
       sonnerToast.success('Search completed', {
         id: 'search',
         description: `Found ${response.shopping_results.length} results`,
@@ -95,7 +109,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       
       toast({
         title: "Search Failed",
-        description: "An error occurred while searching. Please try again.",
+        description: "We encountered a network error. Switching to demo mode.",
         variant: "destructive"
       });
     } finally {
