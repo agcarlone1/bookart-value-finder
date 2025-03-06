@@ -1,4 +1,4 @@
-import { API_KEY, API_BASE_URL, createTimeout, getRequestOptions, getApiUrl, PROXY_URL } from './apiConfig';
+import { API_KEY, API_BASE_URL, createTimeout, getRequestOptions, getApiUrl, getCurrentProxy } from './apiConfig';
 import { SerpApiResponse, SearchOptions } from './types';
 
 export const searchProducts = async ({ 
@@ -20,21 +20,20 @@ export const searchProducts = async ({
     // Add timestamp to prevent caching
     url.searchParams.append('_t', Date.now().toString());
     
-    // Get the final URL with proxy if enabled
-    // Use the provided proxy URL if available, otherwise use the default
-    const proxyUrlToUse = _proxyUrl || (window as any).temporaryProxyOverride || PROXY_URL;
-    const finalUrl = getApiUrl(url.toString()).replace(PROXY_URL, proxyUrlToUse);
+    // Get the final URL with proxy
+    const proxyUrlToUse = _proxyUrl || (window as any).temporaryProxyOverride || getCurrentProxy();
+    const finalUrl = proxyUrlToUse + encodeURIComponent(url.toString());
     
-    console.log('Using URL:', finalUrl);
+    console.log('Full request URL:', finalUrl);
     
-    // Increase the timeout to 30 seconds for production environment
-    const timeout = createTimeout(30000); // 30 seconds timeout
+    // Increase the timeout to 30 seconds
+    const timeout = createTimeout(30000);
     
     try {
-      console.log('Starting fetch request with headers:', getRequestOptions(timeout.signal).headers);
-      const response = await fetch(finalUrl, {
-        ...getRequestOptions(timeout.signal)
-      });
+      const requestOptions = getRequestOptions(timeout.signal);
+      console.log('Request options:', JSON.stringify(requestOptions));
+      
+      const response = await fetch(finalUrl, requestOptions);
       
       timeout.clear();
       
@@ -46,9 +45,9 @@ export const searchProducts = async ({
       
       const data = await response.json();
       
-      console.log('SerpAPI response received:', data.search_metadata?.status);
+      console.log('SerpAPI response received:', data);
       
-      // If the API returns an error field, maintain the error structure
+      // Check if we received an error from SerpAPI
       if (data.error) {
         console.error('SerpAPI error:', data.error);
         throw new Error(data.error);
@@ -69,23 +68,15 @@ export const searchProducts = async ({
     } catch (error) {
       timeout.clear();
       
-      // Log the detailed error
-      if (error instanceof Error) {
-        console.error('Fetch error details:', {
-          message: error.message,
-          name: error.name,
-          stack: error.stack
-        });
-      }
-      
+      console.error('Fetch error details:', error);
       throw error; // Rethrow to be caught by the outer try/catch
     }
     
   } catch (error) {
     console.error("Error fetching from SerpAPI:", error);
     
-    // Check if we should return mock data
-    if (shouldReturnMockData(error)) {
+    // Only use mock data if explicitly allowed
+    if (process.env.NODE_ENV === 'development' && shouldReturnMockData(error)) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.log(`Using mock data due to: ${errorMessage}`);
       return getMockData(query, errorMessage);
@@ -98,6 +89,11 @@ export const searchProducts = async ({
 
 // Function to determine if mock data should be returned
 function shouldReturnMockData(error: unknown): boolean {
+  // In production, we should never use mock data unless explicitly configured to do so
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
+  
   if (error instanceof Error) {
     // Check for common network errors that suggest we should use mock data
     return error.message.includes('Failed to fetch') || 
@@ -105,7 +101,7 @@ function shouldReturnMockData(error: unknown): boolean {
            error.message.includes('CORS') ||
            error.message.includes('AbortError');
   }
-  return true; // Default to mock data for unknown errors
+  return false; // Default to not using mock data for unknown errors
 }
 
 // Update the SearchOptions type to accept the proxy parameter

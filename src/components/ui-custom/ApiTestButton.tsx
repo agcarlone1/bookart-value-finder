@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { RotateCw, CheckCircle2, XCircle, Info } from 'lucide-react';
+import { RotateCw, CheckCircle2, XCircle, Info, Save } from 'lucide-react';
 import { searchProducts } from '@/services/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { PROXY_ENABLED, PROXY_URL, CORS_PROXIES } from '@/services/api/apiConfig';
+import { PROXY_ENABLED, CORS_PROXIES, getCurrentProxy, saveCurrentProxy } from '@/services/api/apiConfig';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 const ApiTestButton = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -14,6 +15,14 @@ const ApiTestButton = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [networkDetails, setNetworkDetails] = useState<string | null>(null);
   const [proxyIndex, setProxyIndex] = useState(0);
+
+  // Load the saved proxy index from localStorage on component mount
+  useEffect(() => {
+    const savedProxy = localStorage.getItem('selectedProxy');
+    if (savedProxy) {
+      setProxyIndex(parseInt(savedProxy));
+    }
+  }, []);
 
   const testApi = async () => {
     try {
@@ -82,6 +91,13 @@ const ApiTestButton = () => {
     setNetworkDetails(`Selected proxy: ${CORS_PROXIES[index]}`);
   };
 
+  const saveProxy = () => {
+    saveCurrentProxy(proxyIndex);
+    toast.success('Proxy setting saved', {
+      description: `${CORS_PROXIES[proxyIndex]} will be used for all API requests`,
+    });
+  };
+
   return (
     <div className="space-y-4 p-4 border rounded-lg">
       <h3 className="font-medium text-lg">API Connection Test</h3>
@@ -103,34 +119,46 @@ const ApiTestButton = () => {
                   Proxy {index + 1}: {proxy.substring(0, 30)}...
                 </SelectItem>
               ))}
-              <SelectItem value={String(CORS_PROXIES.length)}>
-                No proxy (direct connection)
-              </SelectItem>
             </SelectContent>
           </Select>
         </div>
         
-        <Button 
-          onClick={testApi}
-          disabled={isLoading}
-          className="w-full"
-        >
-          {isLoading ? (
-            <>
-              <RotateCw className="mr-2 h-4 w-4 animate-spin" />
-              Testing API...
-            </>
-          ) : (
-            'Test SerpAPI Connection'
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={testApi}
+            disabled={isLoading}
+            className="flex-1"
+          >
+            {isLoading ? (
+              <>
+                <RotateCw className="mr-2 h-4 w-4 animate-spin" />
+                Testing API...
+              </>
+            ) : (
+              'Test SerpAPI Connection'
+            )}
+          </Button>
+          
+          <Button 
+            onClick={saveProxy} 
+            variant="outline"
+            disabled={isLoading}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save Setting
+          </Button>
+        </div>
       </div>
       
       {status === 'success' && (
         <Alert className="bg-green-50 border-green-200 text-green-800">
           <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription>
-            API connection successful! Received {response?.shopping_results?.length || 0} results.
+          <AlertDescription className="space-y-2">
+            <p className="font-medium">API connection successful!</p>
+            <p>Received {response?.shopping_results?.length || 0} real results from SerpAPI.</p>
+            <p className="text-sm">
+              To use this proxy for all searches, click the "Save Setting" button above.
+            </p>
             {networkDetails && (
               <div className="mt-2 text-xs font-mono whitespace-pre-line">
                 <Info className="h-3 w-3 inline mr-1" /> {networkDetails}
@@ -143,8 +171,11 @@ const ApiTestButton = () => {
       {status === 'error' && (
         <Alert className="bg-red-50 border-red-200 text-red-800">
           <XCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="space-y-1">
-            <p>API connection failed: {errorMessage}</p>
+          <AlertDescription className="space-y-2">
+            <p className="font-medium">API connection failed: {errorMessage}</p>
+            <p className="text-sm">
+              This proxy doesn't seem to work with SerpAPI. Please try another proxy from the dropdown above.
+            </p>
             {networkDetails && (
               <div className="mt-2 text-xs font-mono whitespace-pre-line">
                 <Info className="h-3 w-3 inline mr-1" /> {networkDetails}
