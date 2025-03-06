@@ -1,157 +1,179 @@
+import { createContext, useContext, useState, useCallback } from 'react';
+import { ShoppingResult, SearchOptions } from '@/services/api/types';
+import { searchShoppingResults } from '@/services/api/shoppingSearchService';
+import { toast } from "@/components/ui/use-toast"
+import { USE_MOCK_DATA } from '@/services/api/apiConfig';
+import { mockSearchResults } from '@/services/api/mockData';
+import { fetchImageSearchResults } from '@/services/api';
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
-import { toast as sonnerToast } from 'sonner';
-import { searchProducts } from '@/services/api';
-import { useWishlist } from '../WishlistContext';
-import { SearchType, SearchData } from './types';
-import { processImageSearch, processUrlSearch, handleSearchError } from './utils';
+interface SearchContextProps {
+  searchTerm: string;
+  searchResults: ShoppingResult[] | null;
+  isSearching: boolean;
+  isMockData: boolean;
+  performSearch: (searchOptions: { type: 'text' | 'image' | 'url', value: string | File }) => Promise<void>;
+  setSearchTerm: (term: string) => void;
+  setSearchResults: (results: ShoppingResult[]) => void;
+  setIsMockData: (isMock: boolean) => void;
+}
 
-export const useSearchProvider = () => {
+const SearchContext = createContext<SearchContextProps>({
+  searchTerm: '',
+  searchResults: null,
+  isSearching: false,
+  isMockData: false,
+  performSearch: async () => { },
+  setSearchTerm: () => { },
+  setSearchResults: () => { },
+  setIsMockData: () => { },
+});
+
+interface SearchProviderProps {
+  children: React.ReactNode;
+}
+
+const useSearchProvider = ({ children }: SearchProviderProps) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [searchType, setSearchType] = useState<SearchType>('image');
+  const [searchResults, setSearchResults] = useState<ShoppingResult[] | null>(null);
   const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [searchResults, setSearchResults] = useState<any[] | null>(null);
-  const [isMockData, setIsMockData] = useState<boolean>(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { addToSearchHistory } = useWishlist();
+  const [isMockData, setIsMockData] = useState<boolean>(USE_MOCK_DATA);
 
-  const performSearch = async (data: SearchData) => {
+  const uploadAndGetImageUrl = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('Failed to process image'));
+        }
+      };
+
+      reader.onerror = () => {
+        reject(new Error('Failed to read image file'));
+      };
+
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleTextSearch = useCallback(async (query: string, options?: SearchOptions): Promise<ShoppingResult[]> => {
     try {
       setIsSearching(true);
-      setSearchType(data.type);
-      setIsMockData(false);
-      
-      let query = '';
-      
-      if (data.type === 'image' && data.value instanceof File) {
-        query = await processImageSearch(data.value);
-      } else if (data.type === 'url' && typeof data.value === 'string') {
-        query = processUrlSearch(data.value);
-      }
-      
-      if (!query || query.trim().length < 2) {
-        query = "Popular books";
-      }
-      
       setSearchTerm(query);
-      
-      sonnerToast.loading('Searching for the best value...', {
-        id: 'search',
-        duration: 12000,
-      });
-      
-      console.log('Starting product search for query:', query);
-      
-      const startTime = performance.now();
-      
-      try {
-        const isBookSearch = query.toLowerCase().includes('book');
-        const response = await searchProducts({ 
-          query, 
-          isBook: isBookSearch 
-        });
-        
-        const endTime = performance.now();
-        console.log(`Search completed in ${(endTime - startTime).toFixed(0)}ms, status:`, response.search_metadata.status);
-        
-        if (response.search_metadata.status === 'Success (Mock)') {
-          setIsMockData(true);
-          sonnerToast.info('Using demo data', {
-            id: 'search',
-            description: 'Due to API limitations, we\'re showing sample results',
-            duration: 5000,
-          });
-        } else {
-          sonnerToast.success('Search completed', {
-            id: 'search',
-            description: `Found ${response.shopping_results.length} results`,
-            duration: 5000,
-          });
-        }
-        
-        if (response.shopping_results && response.shopping_results.length > 0) {
-          setSearchResults(response.shopping_results);
-          
-          if (query) {
-            addToSearchHistory(query, data.type);
-          }
-          
-          navigate('/results');
-        } else {
-          sonnerToast.error('No results found', {
-            id: 'search',
-            description: 'Please try a different search query',
-            duration: 5000,
-          });
-          
-          toast({
-            title: "No Results",
-            description: "We couldn't find any products matching your search.",
-            variant: "destructive"
-          });
-          
-          const fallbackQuery = "popular books";
-          const mockResponse = await searchProducts({ query: fallbackQuery, isBook: true });
-          
-          setIsMockData(true);
-          setSearchResults(mockResponse.shopping_results);
-          navigate('/results');
-        }
-      } catch (error) {
-        const { searchQuery, useMockData } = await handleSearchError(error, data.value);
-        
-        toast({
-          title: "Search Failed",
-          description: "We encountered an error. Showing sample results instead.",
-          variant: "destructive"
-        });
-        
-        setIsMockData(useMockData);
-        const mockResponse = await searchProducts({ 
-          query: searchQuery,
-          isBook: searchQuery.toLowerCase().includes('book')
-        });
-        
-        if (mockResponse.shopping_results && mockResponse.shopping_results.length > 0) {
-          setSearchResults(mockResponse.shopping_results);
-          navigate('/results');
-        }
+
+      if (isMockData) {
+        // Simulate an API delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return mockSearchResults;
       }
-      
+
+      const results = await searchShoppingResults(query, options);
+      return results;
     } catch (error) {
-      console.error('Overall search process error:', error);
-      
-      sonnerToast.error('Search process failed', {
-        description: 'An unexpected error occurred. Showing sample results instead.',
-        duration: 5000,
+      console.error('Search error:', error);
+      toast({
+        title: 'Search Error',
+        description: error instanceof Error ? error.message : 'Failed to perform search',
+        variant: 'destructive'
       });
-      
-      setIsMockData(true);
-      const mockResponse = await searchProducts({ query: 'popular books', isBook: true });
-      setSearchResults(mockResponse.shopping_results);
-      navigate('/results');
-      
+      return [];
+    } finally {
+      setIsSearching(false);
+    }
+  }, [isMockData]);
+
+  const handleImageSearch = async (value: File | string): Promise<ShoppingResult[]> => {
+    try {
+      setIsSearching(true);
+    
+      // Get the image URL (either from File or direct URL)
+      const imageUrl = typeof value === 'string' 
+        ? value 
+        : await uploadAndGetImageUrl(value);
+    
+      if (!imageUrl) {
+        throw new Error('Failed to process image');
+      }
+    
+      // Call our server-side API via the client function
+      const response = await fetchImageSearchResults(imageUrl);
+    
+      if (response.error) {
+        throw new Error(response.error);
+      }
+    
+      // Process the response data
+      const results = response.exact_matches?.map((match, index) => ({
+        position: index + 1,
+        title: match.title,
+        link: match.link,
+        source: match.source,
+        price: match.price || 'N/A',
+        extracted_price: match.extracted_price || 0,
+        thumbnail: match.thumbnail,
+        delivery: 'Check website',
+        rating: match.rating,
+        reviews: match.reviews
+      })) || [];
+    
+      return results;
+    } catch (error) {
+      console.error('Image search error:', error);
+      toast({
+        title: 'Search Error',
+        description: error instanceof Error ? error.message : 'Failed to search image',
+        variant: 'destructive'
+      });
+      return [];
     } finally {
       setIsSearching(false);
     }
   };
 
-  const clearSearch = () => {
-    setSearchTerm('');
+  const performSearch = useCallback(async (searchOptions: { type: 'text' | 'image' | 'url', value: string | File }) => {
     setSearchResults(null);
-    setIsMockData(false);
-  };
+    setSearchTerm('');
 
-  return {
-    searchTerm,
-    searchType,
-    isSearching,
-    searchResults,
-    performSearch,
-    clearSearch,
-    isMockData
-  };
+    try {
+      let results: ShoppingResult[] = [];
+
+      if (searchOptions.type === 'text') {
+        results = await handleTextSearch(searchOptions.value as string);
+      } else if (searchOptions.type === 'image' || searchOptions.type === 'url') {
+        results = await handleImageSearch(searchOptions.value);
+      }
+
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Search failed:', error);
+      toast({
+        title: 'Search Error',
+        description: 'An error occurred during the search. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  }, [handleTextSearch, handleImageSearch]);
+
+  return (
+    <SearchContext.Provider
+      value={{
+        searchTerm,
+        searchResults,
+        isSearching,
+        isMockData,
+        performSearch,
+        setSearchTerm,
+        setSearchResults,
+        setIsMockData,
+      }}
+    >
+      {children}
+    </SearchContext.Provider>
+  );
 };
+
+const useSearch = () => useContext(SearchContext);
+
+export { useSearchProvider as SearchProvider, useSearch };

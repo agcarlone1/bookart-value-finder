@@ -6,3 +6,4 @@ export * from './imageAnalysisService';
 export * from './googleLensService';
 export * from './apiConfig';
 export * from './types';
+export * from './apiClient';
