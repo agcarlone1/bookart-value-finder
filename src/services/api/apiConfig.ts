@@ -19,7 +19,7 @@ export const getRequestOptions = (signal: AbortSignal) => ({
     'Expires': '0',
   },
   signal,
-  cache: 'no-store',
+  cache: 'no-store' as RequestCache,  // Fix: Type as RequestCache
   mode: 'cors' as RequestMode,
 });
 
