@@ -77,9 +77,9 @@ const Wishlist = () => {
             <div className="mb-4 bg-muted/30 p-3 rounded-lg border">
               <div className="flex items-center gap-2">
                 <div className="flex-shrink-0">
-                  {user?.profileImageUrl ? (
+                  {user?.imageUrl ? (
                     <img 
-                      src={user.profileImageUrl} 
+                      src={user.imageUrl} 
                       alt={user.username || 'User'} 
                       className="h-10 w-10 rounded-full"
                     />
