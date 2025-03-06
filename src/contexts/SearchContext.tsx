@@ -28,7 +28,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [isMockData, setIsMockData] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { searchHistory, addToSearchHistory } = useWishlist();
+  const { addToSearchHistory } = useWishlist();
 
   const performSearch = async (data: { type: SearchType, value: string | File }) => {
     try {
@@ -42,6 +42,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (data.type === 'image' && data.value instanceof File) {
         sonnerToast.loading('Analyzing image with Google Lens...', {
           id: 'image-analysis',
+          duration: 30000, // Increased timeout for image analysis
         });
         
         query = await extractSearchQueryFromImage(data.value);
@@ -51,21 +52,32 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           description: `Searching for: ${query}`,
         });
       } else if (data.type === 'url' && typeof data.value === 'string') {
-        // For URL, we'll just use the last part of the URL as a simple query
+        // For URL, we'll try to extract a meaningful search term
         const urlParts = data.value.split('/');
-        query = urlParts[urlParts.length - 1].replace(/[-_]/g, ' ');
-        if (!query) query = data.value;
+        query = urlParts[urlParts.length - 1]
+          .replace(/[-_]/g, ' ')
+          .replace(/\.(jpg|jpeg|png|gif|webp)$/i, '');
+          
+        if (!query || query.length < 3) {
+          // If we couldn't extract a good query, use a different part of the URL
+          const domainParts = new URL(data.value).hostname.split('.');
+          query = domainParts[0] !== 'www' ? domainParts[0] : data.value;
+        }
       }
       
       setSearchTerm(query);
       
       sonnerToast.loading('Searching for the best value...', {
         id: 'search',
-        duration: 10000,
+        duration: 20000, // Increased timeout for search
       });
       
-      // Perform the actual search
+      console.log('Starting product search for query:', query);
+      
+      // Perform the actual search with improved error handling
       const response = await searchProducts({ query });
+      
+      console.log('Search completed, status:', response.search_metadata.status);
       
       // Check if we're using mock data
       if (response.search_metadata.status === 'Success (Mock)') {
@@ -112,9 +124,20 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       
       toast({
         title: "Search Failed",
-        description: "We encountered a network error. Please try again later.",
+        description: "We encountered an error. Please try again with a different search.",
         variant: "destructive"
       });
+      
+      // Set mock data if real search failed
+      setIsMockData(true);
+      const mockResponse = await searchProducts({ 
+        query: typeof data.value === 'string' ? data.value : 'sample product'
+      });
+      
+      if (mockResponse.shopping_results && mockResponse.shopping_results.length > 0) {
+        setSearchResults(mockResponse.shopping_results);
+        navigate('/results');
+      }
     } finally {
       setIsSearching(false);
     }

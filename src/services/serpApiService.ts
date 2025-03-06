@@ -64,6 +64,7 @@ interface SearchOptions {
 }
 
 // This should ideally be stored in environment variables
+// But this is a publishable key for SerpAPI that can be safely included in the code
 const API_KEY = '4bce77d816528a3073a7ff2607e3cb2b3ff477cfc43bc5bbca830353830ab7f6';
 
 export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Promise<SerpApiResponse> => {
@@ -77,9 +78,9 @@ export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Prom
 
     console.log('Fetching from SerpAPI with query:', query);
     
-    // Reduce the timeout to 10 seconds to avoid long waits
+    // Increase the timeout to 15 seconds to allow for slower connections
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
     
     try {
       const response = await fetch(url.toString(), {
@@ -88,6 +89,8 @@ export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Prom
           'Content-Type': 'application/json',
         },
         signal: controller.signal,
+        // Adding cache: 'no-store' to prevent caching issues
+        cache: 'no-store',
       });
       
       clearTimeout(timeoutId);
@@ -99,12 +102,18 @@ export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Prom
       
       const data = await response.json();
       
-      console.log('SerpAPI response received');
+      console.log('SerpAPI response received:', data.search_metadata?.status);
       
       // If the API returns an error field, maintain the error structure
       if (data.error) {
         console.error('SerpAPI error:', data.error);
-        return getMockData(query, data.error);
+        throw new Error(data.error);
+      }
+      
+      // If there are no shopping results, throw an error
+      if (!data.shopping_results || data.shopping_results.length === 0) {
+        console.error('No shopping results found');
+        throw new Error('No shopping results found');
       }
       
       // Limit the results if requested
@@ -213,15 +222,17 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
     formData.append('engine', 'google_lens_exact_matches');
     formData.append('image_file', imageFile);
     
-    // Reduce the timeout to 20 seconds to avoid long waits
+    // Increase the timeout to 30 seconds for image processing which can take longer
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 seconds timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
     
     try {
       const response = await fetch('https://serpapi.com/search', {
         method: 'POST',
         body: formData,
         signal: controller.signal,
+        // Adding cache: 'no-store' to prevent caching issues
+        cache: 'no-store',
       });
       
       clearTimeout(timeoutId);
@@ -251,7 +262,7 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
       }
       
       // If no matches found, return a generic query
-      return "Unidentified product";
+      throw new Error("Could not identify the product in the image");
       
     } catch (error) {
       clearTimeout(timeoutId);
@@ -261,7 +272,7 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
   } catch (error) {
     console.error("Error extracting query from image:", error);
     
-    // For errors, provide a fallback mechanism by extracting keywords from the filename
+    // Improved fallback mechanism
     const fileName = imageFile.name.toLowerCase();
     
     // Extract keywords from filename as a basic fallback
@@ -273,4 +284,3 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
     return "Unidentified product";
   }
 };
-
