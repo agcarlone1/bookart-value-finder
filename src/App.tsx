@@ -10,6 +10,7 @@ import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound";
 import { SearchProvider } from "./contexts/SearchContext";
 import { WishlistProvider } from "./contexts/WishlistContext";
+import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -17,18 +18,20 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <BrowserRouter>
-        <WishlistProvider>
-          <SearchProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/results" element={<Results />} />
-              <Route path="/wishlist" element={<Wishlist />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </SearchProvider>
-        </WishlistProvider>
+        <AuthProvider>
+          <WishlistProvider>
+            <SearchProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/results" element={<Results />} />
+                <Route path="/wishlist" element={<Wishlist />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </SearchProvider>
+          </WishlistProvider>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

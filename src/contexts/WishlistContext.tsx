@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
+import { useAuth } from './AuthContext';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Define types for our wishlist items
 export interface WishlistItem {
@@ -31,37 +33,113 @@ interface WishlistContextType {
   clearWishlist: () => void;
   clearSearchHistory: () => void;
   addToSearchHistory: (searchTerm: string, searchType: 'image' | 'url') => void;
+  isLoading: boolean;
 }
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
+// Mock API functions (replace these with actual API calls to your backend)
+const fetchUserWishlist = async (userId: string): Promise<WishlistItem[]> => {
+  // In a real app, this would be an API call to your backend
+  const localWishlist = localStorage.getItem(`wishlist_${userId}`);
+  return localWishlist ? JSON.parse(localWishlist) : [];
+};
+
+const fetchUserSearchHistory = async (userId: string): Promise<SearchHistoryItem[]> => {
+  // In a real app, this would be an API call to your backend
+  const localHistory = localStorage.getItem(`searchHistory_${userId}`);
+  return localHistory ? JSON.parse(localHistory) : [];
+};
+
+const saveUserWishlist = async (userId: string, items: WishlistItem[]): Promise<void> => {
+  // In a real app, this would be an API call to your backend
+  localStorage.setItem(`wishlist_${userId}`, JSON.stringify(items));
+  return Promise.resolve();
+};
+
+const saveUserSearchHistory = async (userId: string, items: SearchHistoryItem[]): Promise<void> => {
+  // In a real app, this would be an API call to your backend
+  localStorage.setItem(`searchHistory_${userId}`, JSON.stringify(items));
+  return Promise.resolve();
+};
+
 export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
-  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  const { userId, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [localWishlistItems, setLocalWishlistItems] = useState<WishlistItem[]>([]);
+  const [localSearchHistory, setLocalSearchHistory] = useState<SearchHistoryItem[]>([]);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Load wishlist from localStorage on initial render
-  useEffect(() => {
-    const savedWishlist = localStorage.getItem('wishlist');
-    if (savedWishlist) {
-      setWishlistItems(JSON.parse(savedWishlist));
+  // Fetch wishlist and search history for authenticated users
+  const { 
+    data: userWishlist = [], 
+    isLoading: wishlistLoading,
+    refetch: refetchWishlist
+  } = useQuery({
+    queryKey: ['wishlist', userId],
+    queryFn: () => fetchUserWishlist(userId || ''),
+    enabled: isAuthenticated && !!userId,
+  });
+
+  const { 
+    data: userSearchHistory = [], 
+    isLoading: historyLoading,
+    refetch: refetchHistory
+  } = useQuery({
+    queryKey: ['searchHistory', userId],
+    queryFn: () => fetchUserSearchHistory(userId || ''),
+    enabled: isAuthenticated && !!userId,
+  });
+
+  // Save wishlist mutation
+  const saveWishlistMutation = useMutation({
+    mutationFn: (items: WishlistItem[]) => saveUserWishlist(userId || '', items),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wishlist', userId] });
     }
-    
-    const savedSearchHistory = localStorage.getItem('searchHistory');
-    if (savedSearchHistory) {
-      setSearchHistory(JSON.parse(savedSearchHistory));
+  });
+
+  // Save search history mutation
+  const saveSearchHistoryMutation = useMutation({
+    mutationFn: (items: SearchHistoryItem[]) => saveUserSearchHistory(userId || '', items),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['searchHistory', userId] });
     }
-  }, []);
+  });
 
-  // Save wishlist to localStorage whenever it changes
+  // Load local wishlist from localStorage on initial render
   useEffect(() => {
-    localStorage.setItem('wishlist', JSON.stringify(wishlistItems));
-  }, [wishlistItems]);
+    if (!isAuthenticated) {
+      const savedWishlist = localStorage.getItem('wishlist');
+      if (savedWishlist) {
+        setLocalWishlistItems(JSON.parse(savedWishlist));
+      }
+      
+      const savedSearchHistory = localStorage.getItem('searchHistory');
+      if (savedSearchHistory) {
+        setLocalSearchHistory(JSON.parse(savedSearchHistory));
+      }
+    }
+  }, [isAuthenticated]);
 
-  // Save search history to localStorage whenever it changes
+  // Save local wishlist to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
-  }, [searchHistory]);
+    if (!isAuthenticated) {
+      localStorage.setItem('wishlist', JSON.stringify(localWishlistItems));
+    }
+  }, [localWishlistItems, isAuthenticated]);
+
+  // Save local search history to localStorage whenever it changes
+  useEffect(() => {
+    if (!isAuthenticated) {
+      localStorage.setItem('searchHistory', JSON.stringify(localSearchHistory));
+    }
+  }, [localSearchHistory, isAuthenticated]);
+
+  // Get the appropriate wishlist and search history based on authentication status
+  const wishlistItems = isAuthenticated ? userWishlist : localWishlistItems;
+  const searchHistory = isAuthenticated ? userSearchHistory : localSearchHistory;
+  const isLoading = authLoading || (isAuthenticated && (wishlistLoading || historyLoading));
 
   // Add a product to the wishlist
   const addToWishlist = (product: any) => {
@@ -73,7 +151,12 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
         addedAt: new Date().toISOString()
       };
       
-      setWishlistItems(prev => [newItem, ...prev]);
+      if (isAuthenticated && userId) {
+        const updatedWishlist = [newItem, ...userWishlist];
+        saveWishlistMutation.mutate(updatedWishlist);
+      } else {
+        setLocalWishlistItems(prev => [newItem, ...prev]);
+      }
       
       sonnerToast.success('Added to Wishlist', {
         description: product.name,
@@ -86,7 +169,12 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   // Remove a product from the wishlist
   const removeFromWishlist = (productId: string) => {
-    setWishlistItems(prev => prev.filter(item => item.id !== productId));
+    if (isAuthenticated && userId) {
+      const updatedWishlist = userWishlist.filter(item => item.id !== productId);
+      saveWishlistMutation.mutate(updatedWishlist);
+    } else {
+      setLocalWishlistItems(prev => prev.filter(item => item.id !== productId));
+    }
     
     sonnerToast.success('Removed from Wishlist', {
       description: 'Item removed successfully',
@@ -107,12 +195,22 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
       timestamp: new Date().toISOString()
     };
     
-    setSearchHistory(prev => [newSearch, ...prev.slice(0, 19)]); // Keep last 20 searches
+    if (isAuthenticated && userId) {
+      const updatedHistory = [newSearch, ...userSearchHistory.slice(0, 19)]; // Keep last 20 searches
+      saveSearchHistoryMutation.mutate(updatedHistory);
+    } else {
+      setLocalSearchHistory(prev => [newSearch, ...prev.slice(0, 19)]); // Keep last 20 searches
+    }
   };
 
   // Clear the entire wishlist
   const clearWishlist = () => {
-    setWishlistItems([]);
+    if (isAuthenticated && userId) {
+      saveWishlistMutation.mutate([]);
+    } else {
+      setLocalWishlistItems([]);
+    }
+    
     toast({
       title: "Wishlist Cleared",
       description: "All items have been removed from your wishlist."
@@ -121,7 +219,12 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   // Clear search history
   const clearSearchHistory = () => {
-    setSearchHistory([]);
+    if (isAuthenticated && userId) {
+      saveSearchHistoryMutation.mutate([]);
+    } else {
+      setLocalSearchHistory([]);
+    }
+    
     toast({
       title: "Search History Cleared",
       description: "Your search history has been cleared."
@@ -138,6 +241,7 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
       clearWishlist,
       clearSearchHistory,
       addToSearchHistory,
+      isLoading
     }}>
       {children}
     </WishlistContext.Provider>
