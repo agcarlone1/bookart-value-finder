@@ -8,7 +8,7 @@ import TabView from '@/components/ui-custom/TabView';
 import { ArrowLeft, Heart, History, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useWishlist, SearchHistoryItem } from '@/contexts/WishlistContext';
-import { useSearch } from '@/contexts/SearchContext';
+import { useSearch } from '@/contexts/search';
 import { format } from 'date-fns';
 import { 
   AlertDialog,
