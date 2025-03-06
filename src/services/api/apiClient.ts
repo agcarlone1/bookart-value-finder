@@ -1,4 +1,3 @@
-
 import { GoogleLensRequest, LensApiResponse } from './types';
 
 // Get the API URL from environment variables or use a fallback
@@ -19,12 +18,12 @@ export const fetchImageSearchResults = async (
     
     // Add a direct fetch test to verify endpoint is reachable
     try {
-      const testResponse = await fetch(endpoint, {
-        method: 'HEAD',
+      const testResponse = await fetch(`${API_URL}/health`, {
+        method: 'GET',
       });
-      console.log(`Endpoint test: ${endpoint} is ${testResponse.ok ? 'reachable' : 'not reachable'} (status: ${testResponse.status})`);
+      console.log(`API health check: ${testResponse.ok ? 'server is reachable' : 'server is not reachable'} (status: ${testResponse.status})`);
     } catch (testError) {
-      console.error(`Endpoint test failed for ${endpoint}:`, testError);
+      console.error(`API health check failed:`, testError);
     }
     
     const response = await fetch(endpoint, {
