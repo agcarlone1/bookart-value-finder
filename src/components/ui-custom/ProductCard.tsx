@@ -71,17 +71,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, className, isBestVal
           <div className="mt-auto flex items-center justify-between">
             <span className="text-base font-semibold">${product.price.toFixed(2)}</span>
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-7 px-2 text-xs group-hover:text-primary transition-colors duration-300"
-              asChild
+            <a 
+              href={product.link} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center h-7 px-2 text-xs group-hover:text-primary transition-colors duration-300"
+              onClick={(e) => e.stopPropagation()}
             >
-              <a href={product.link} target="_blank" rel="noopener noreferrer">
-                <span>View</span>
-                <ArrowRight size={12} className="ml-1" />
-              </a>
-            </Button>
+              <span>View</span>
+              <ArrowRight size={12} className="ml-1" />
+            </a>
           </div>
         </div>
       </div>
