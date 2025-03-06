@@ -3,7 +3,8 @@ import React from 'react';
 import { History, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { useWishlist, SearchHistoryItem } from '@/contexts/WishlistContext';
+import { useWishlist } from '@/contexts/wishlist';
+import { SearchHistoryItem } from '@/contexts/wishlist';
 import { useSearch } from '@/contexts/SearchContext';
 import { format } from 'date-fns';
 

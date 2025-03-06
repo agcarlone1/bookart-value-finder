@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import TabView from '@/components/ui-custom/TabView';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useWishlist } from '@/contexts/WishlistContext';
+import { useWishlist } from '@/contexts/wishlist';
 import WishlistItems from '@/components/wishlist/WishlistItems';
 import SearchHistoryList from '@/components/wishlist/SearchHistoryList';
 import ClearConfirmationDialog from '@/components/wishlist/ClearConfirmationDialog';

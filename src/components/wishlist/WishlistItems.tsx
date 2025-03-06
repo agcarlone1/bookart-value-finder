@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Heart, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ui-custom/ProductCard';
 import { useNavigate } from 'react-router-dom';
-import { useWishlist } from '@/contexts/WishlistContext';
+import { useWishlist } from '@/contexts/wishlist';
 
 const WishlistItems = ({
   onClearWishlist

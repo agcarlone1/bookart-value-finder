@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import AnimatedLogo from '../ui-custom/AnimatedLogo';
 import { Button } from '@/components/ui/button';
 import { User, Heart } from 'lucide-react';
-import { useWishlist } from '@/contexts/WishlistContext';
+import { useWishlist } from '@/contexts/wishlist';
 import { useAuth } from '@/contexts/AuthContext';
 import { SignInButton, SignOutButton, useUser } from '@clerk/clerk-react';
 

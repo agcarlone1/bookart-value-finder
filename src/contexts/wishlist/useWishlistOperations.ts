@@ -1,69 +1,22 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
-import { useAuth } from './AuthContext';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { WishlistItem, SearchHistoryItem } from './types';
+import { 
+  fetchUserWishlist, 
+  fetchUserSearchHistory, 
+  saveUserWishlist, 
+  saveUserSearchHistory,
+  getLocalWishlist,
+  saveLocalWishlist,
+  getLocalSearchHistory,
+  saveLocalSearchHistory
+} from './storage-service';
+import { useAuth } from '../AuthContext';
 
-// Define types for our wishlist items
-export interface WishlistItem {
-  id: string;
-  name: string;
-  storeName: string;
-  price: number;
-  imageUrl: string;
-  link: string;
-  addedAt: string;
-}
-
-// Define type for search history
-export interface SearchHistoryItem {
-  id: string;
-  searchTerm: string;
-  searchType: 'image' | 'url';
-  timestamp: string;
-}
-
-interface WishlistContextType {
-  wishlistItems: WishlistItem[];
-  searchHistory: SearchHistoryItem[];
-  addToWishlist: (product: any) => void;
-  removeFromWishlist: (productId: string) => void;
-  isInWishlist: (productId: string) => boolean;
-  clearWishlist: () => void;
-  clearSearchHistory: () => void;
-  addToSearchHistory: (searchTerm: string, searchType: 'image' | 'url') => void;
-  isLoading: boolean;
-}
-
-const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
-
-// Mock API functions (replace these with actual API calls to your backend)
-const fetchUserWishlist = async (userId: string): Promise<WishlistItem[]> => {
-  // In a real app, this would be an API call to your backend
-  const localWishlist = localStorage.getItem(`wishlist_${userId}`);
-  return localWishlist ? JSON.parse(localWishlist) : [];
-};
-
-const fetchUserSearchHistory = async (userId: string): Promise<SearchHistoryItem[]> => {
-  // In a real app, this would be an API call to your backend
-  const localHistory = localStorage.getItem(`searchHistory_${userId}`);
-  return localHistory ? JSON.parse(localHistory) : [];
-};
-
-const saveUserWishlist = async (userId: string, items: WishlistItem[]): Promise<void> => {
-  // In a real app, this would be an API call to your backend
-  localStorage.setItem(`wishlist_${userId}`, JSON.stringify(items));
-  return Promise.resolve();
-};
-
-const saveUserSearchHistory = async (userId: string, items: SearchHistoryItem[]): Promise<void> => {
-  // In a real app, this would be an API call to your backend
-  localStorage.setItem(`searchHistory_${userId}`, JSON.stringify(items));
-  return Promise.resolve();
-};
-
-export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const useWishlistOperations = () => {
   const { userId, isAuthenticated, isLoading: authLoading } = useAuth();
   const [localWishlistItems, setLocalWishlistItems] = useState<WishlistItem[]>([]);
   const [localSearchHistory, setLocalSearchHistory] = useState<SearchHistoryItem[]>([]);
@@ -110,29 +63,22 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
   // Load local wishlist from localStorage on initial render
   useEffect(() => {
     if (!isAuthenticated) {
-      const savedWishlist = localStorage.getItem('wishlist');
-      if (savedWishlist) {
-        setLocalWishlistItems(JSON.parse(savedWishlist));
-      }
-      
-      const savedSearchHistory = localStorage.getItem('searchHistory');
-      if (savedSearchHistory) {
-        setLocalSearchHistory(JSON.parse(savedSearchHistory));
-      }
+      setLocalWishlistItems(getLocalWishlist());
+      setLocalSearchHistory(getLocalSearchHistory());
     }
   }, [isAuthenticated]);
 
   // Save local wishlist to localStorage whenever it changes
   useEffect(() => {
     if (!isAuthenticated) {
-      localStorage.setItem('wishlist', JSON.stringify(localWishlistItems));
+      saveLocalWishlist(localWishlistItems);
     }
   }, [localWishlistItems, isAuthenticated]);
 
   // Save local search history to localStorage whenever it changes
   useEffect(() => {
     if (!isAuthenticated) {
-      localStorage.setItem('searchHistory', JSON.stringify(localSearchHistory));
+      saveLocalSearchHistory(localSearchHistory);
     }
   }, [localSearchHistory, isAuthenticated]);
 
@@ -231,27 +177,15 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
     });
   };
 
-  return (
-    <WishlistContext.Provider value={{
-      wishlistItems,
-      searchHistory,
-      addToWishlist,
-      removeFromWishlist,
-      isInWishlist,
-      clearWishlist,
-      clearSearchHistory,
-      addToSearchHistory,
-      isLoading
-    }}>
-      {children}
-    </WishlistContext.Provider>
-  );
-};
-
-export const useWishlist = () => {
-  const context = useContext(WishlistContext);
-  if (context === undefined) {
-    throw new Error('useWishlist must be used within a WishlistProvider');
-  }
-  return context;
+  return {
+    wishlistItems,
+    searchHistory,
+    addToWishlist,
+    removeFromWishlist,
+    isInWishlist,
+    clearWishlist,
+    clearSearchHistory,
+    addToSearchHistory,
+    isLoading
+  };
 };

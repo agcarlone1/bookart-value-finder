@@ -9,7 +9,7 @@ import Results from "./pages/Results";
 import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound";
 import { SearchProvider } from "./contexts/SearchContext";
-import { WishlistProvider } from "./contexts/WishlistContext";
+import { WishlistProvider } from "./contexts/wishlist";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
