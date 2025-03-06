@@ -1,6 +1,7 @@
 
-// Type definitions for API responses
+// Type definitions for API services
 
+// Common metadata
 export interface SerpApiMetadata {
   id: string;
   status: string;
@@ -20,6 +21,7 @@ export interface SearchParameters {
   hl?: string;
 }
 
+// Shopping search types
 export interface ShoppingResult {
   position: number;
   title: string;
@@ -29,6 +31,8 @@ export interface ShoppingResult {
   extracted_price: number;
   thumbnail: string;
   delivery: string;
+  rating?: number;
+  reviews?: number;
 }
 
 export interface SerpApiResponse {
@@ -38,7 +42,8 @@ export interface SerpApiResponse {
   error?: string;
 }
 
-export interface ExactMatch {
+// Google Lens API types
+export interface ProductMatch {
   title: string;
   link: string;
   thumbnail: string;
@@ -54,8 +59,8 @@ export interface ExactMatch {
 export interface LensApiResponse {
   search_metadata: SerpApiMetadata;
   search_parameters: SearchParameters;
-  exact_matches?: ExactMatch[];   // Put exact_matches first as they're often more accurate
-  visual_matches?: ExactMatch[];  // Keep visual_matches as secondary
+  exact_matches?: ProductMatch[];  // Prioritized matches
+  visual_matches?: ProductMatch[];
   knowledge_graph?: {
     title?: string;
     type?: string;
@@ -64,15 +69,9 @@ export interface LensApiResponse {
   error?: string;
 }
 
+// Search options
 export interface SearchOptions {
   query: string;
   limit?: number;
   isBook?: boolean;
-}
-
-// Book-specific types for improved detection
-export interface BookIdentifier {
-  title: string;
-  author?: string;
-  confidence: 'high' | 'medium' | 'low';
 }

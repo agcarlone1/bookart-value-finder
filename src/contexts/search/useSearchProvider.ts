@@ -48,7 +48,11 @@ export const useSearchProvider = () => {
       const startTime = performance.now();
       
       try {
-        const response = await searchProducts({ query });
+        const isBookSearch = query.toLowerCase().includes('book');
+        const response = await searchProducts({ 
+          query, 
+          isBook: isBookSearch 
+        });
         
         const endTime = performance.now();
         console.log(`Search completed in ${(endTime - startTime).toFixed(0)}ms, status:`, response.search_metadata.status);
@@ -89,9 +93,8 @@ export const useSearchProvider = () => {
             variant: "destructive"
           });
           
-          const mockResponse = await searchProducts({ 
-            query: "popular books"
-          });
+          const fallbackQuery = "popular books";
+          const mockResponse = await searchProducts({ query: fallbackQuery, isBook: true });
           
           setIsMockData(true);
           setSearchResults(mockResponse.shopping_results);
@@ -107,7 +110,10 @@ export const useSearchProvider = () => {
         });
         
         setIsMockData(useMockData);
-        const mockResponse = await searchProducts({ query: searchQuery });
+        const mockResponse = await searchProducts({ 
+          query: searchQuery,
+          isBook: searchQuery.toLowerCase().includes('book')
+        });
         
         if (mockResponse.shopping_results && mockResponse.shopping_results.length > 0) {
           setSearchResults(mockResponse.shopping_results);
@@ -124,7 +130,7 @@ export const useSearchProvider = () => {
       });
       
       setIsMockData(true);
-      const mockResponse = await searchProducts({ query: 'popular books' });
+      const mockResponse = await searchProducts({ query: 'popular books', isBook: true });
       setSearchResults(mockResponse.shopping_results);
       navigate('/results');
       

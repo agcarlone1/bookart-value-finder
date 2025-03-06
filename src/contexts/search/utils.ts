@@ -4,7 +4,7 @@ import { toast as sonnerToast } from 'sonner';
 import { extractSearchQueryFromImage } from '@/services/api';
 
 export const processImageSearch = async (imageFile: File): Promise<string> => {
-  sonnerToast.loading('Analyzing image with Google Lens...', {
+  sonnerToast.loading('Analyzing image...', {
     id: 'image-analysis',
     duration: 15000,
   });
@@ -44,7 +44,7 @@ export const processImageSearch = async (imageFile: File): Promise<string> => {
       return fileName;
     }
     
-    // Generic fallback with no hard-coded references to specific books
+    // Generic fallback
     return "popular books";
   }
 };
@@ -82,12 +82,12 @@ export const handleSearchError = async (error: any, value: string | File): Promi
     duration: 5000,
   });
   
-  // Construct generic search query without hardcoding specific products
+  // Construct generic search query
   const searchQuery = typeof value === 'string' 
     ? value.substring(0, 50) 
-    : (value instanceof File ? 
-        (value.name.length > 5 ? value.name.replace(/\.[^/.]+$/, "") : "popular products") 
-        : "popular products");
+    : (value instanceof File 
+        ? (value.name.length > 5 ? value.name.replace(/\.[^/.]+$/, "") : "popular books") 
+        : "popular books");
   
   return { searchQuery, useMockData: true };
 };
