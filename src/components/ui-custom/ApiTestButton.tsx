@@ -4,9 +4,18 @@ import { Button } from '@/components/ui/button';
 import { RotateCw, CheckCircle2, XCircle, Info, Save } from 'lucide-react';
 import { searchProducts } from '@/services/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { PROXY_ENABLED, CORS_PROXIES, getCurrentProxy, saveCurrentProxy } from '@/services/api/apiConfig';
+import { 
+  PROXY_ENABLED, 
+  CORS_PROXIES, 
+  getCurrentProxy, 
+  saveCurrentProxy,
+  USE_MOCK_DATA_ONLY,
+  IS_DEVELOPMENT
+} from '@/services/api/apiConfig';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const ApiTestButton = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,6 +24,7 @@ const ApiTestButton = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [networkDetails, setNetworkDetails] = useState<string | null>(null);
   const [proxyIndex, setProxyIndex] = useState(0);
+  const [useMockData, setUseMockData] = useState(false);
 
   // Load the saved proxy index from localStorage on component mount
   useEffect(() => {
@@ -40,6 +50,9 @@ const ApiTestButton = () => {
       const useProxyUrl = CORS_PROXIES[proxyIndex];
       console.log(`Using proxy: ${useProxyUrl}`);
       
+      // Set the mock data flag for this test
+      (window as any).useMockDataOverride = useMockData;
+      
       // We need to temporarily override the proxy in the API config
       // This doesn't persist - it's just for this test
       (window as any).temporaryProxyOverride = useProxyUrl;
@@ -54,13 +67,21 @@ const ApiTestButton = () => {
       
       // Check if it's mock data
       if (result.search_metadata.status === 'Success (Mock)') {
-        setStatus('error');
-        setErrorMessage('Received mock data instead of real API data');
-        setNetworkDetails(
-          `Using CORS proxy: ${PROXY_ENABLED ? 'Yes' : 'No'}\n` +
-          `Proxy URL: ${useProxyUrl}\n\n` +
-          `This proxy is not working. Please try a different one.`
-        );
+        if (useMockData) {
+          setStatus('success');
+          setNetworkDetails(
+            `Mock Data Mode: ON\n` +
+            `Using mock data as requested. This is only for testing/development.`
+          );
+        } else {
+          setStatus('error');
+          setErrorMessage('Received mock data instead of real API data');
+          setNetworkDetails(
+            `Using CORS proxy: ${PROXY_ENABLED ? 'Yes' : 'No'}\n` +
+            `Proxy URL: ${useProxyUrl}\n\n` +
+            `This proxy is not working. Please try a different one.`
+          );
+        }
       } else {
         setStatus('success');
         setNetworkDetails(`Successfully connected using proxy: ${useProxyUrl}`);
@@ -80,8 +101,9 @@ const ApiTestButton = () => {
       );
     } finally {
       setIsLoading(false);
-      // Clean up the temporary override
+      // Clean up the temporary overrides
       delete (window as any).temporaryProxyOverride;
+      delete (window as any).useMockDataOverride;
     }
   };
 
@@ -102,7 +124,7 @@ const ApiTestButton = () => {
     <div className="space-y-4 p-4 border rounded-lg">
       <h3 className="font-medium text-lg">API Connection Test</h3>
       
-      <div className="space-y-2">
+      <div className="space-y-4">
         <div className="flex flex-col gap-2">
           <label className="text-sm text-gray-500">Select CORS Proxy:</label>
           <Select 
@@ -122,6 +144,17 @@ const ApiTestButton = () => {
             </SelectContent>
           </Select>
         </div>
+        
+        {IS_DEVELOPMENT && (
+          <div className="flex items-center space-x-2 py-2">
+            <Switch
+              id="use-mock-data"
+              checked={useMockData}
+              onCheckedChange={setUseMockData}
+            />
+            <Label htmlFor="use-mock-data">Use mock data (for testing)</Label>
+          </div>
+        )}
         
         <div className="flex gap-2">
           <Button 
@@ -155,7 +188,7 @@ const ApiTestButton = () => {
           <CheckCircle2 className="h-4 w-4 text-green-600" />
           <AlertDescription className="space-y-2">
             <p className="font-medium">API connection successful!</p>
-            <p>Received {response?.shopping_results?.length || 0} real results from SerpAPI.</p>
+            <p>Received {response?.shopping_results?.length || 0} {useMockData ? 'mock' : 'real'} results from SerpAPI.</p>
             <p className="text-sm">
               To use this proxy for all searches, click the "Save Setting" button above.
             </p>

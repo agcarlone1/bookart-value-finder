@@ -1,4 +1,14 @@
-import { API_KEY, API_BASE_URL, createTimeout, getRequestOptions, getApiUrl, getCurrentProxy } from './apiConfig';
+
+import { 
+  API_KEY, 
+  API_BASE_URL, 
+  createTimeout, 
+  getRequestOptions, 
+  getApiUrl, 
+  getCurrentProxy,
+  IS_DEVELOPMENT,
+  USE_MOCK_DATA_ONLY
+} from './apiConfig';
 import { SerpApiResponse, SearchOptions } from './types';
 
 export const searchProducts = async ({ 
@@ -9,28 +19,37 @@ export const searchProducts = async ({
   try {
     console.log('Fetching from SerpAPI with query:', query);
     
-    // Create URL with all necessary parameters
-    const url = new URL(`${API_BASE_URL}/search.json`);
-    url.searchParams.append('engine', 'google_shopping');
-    url.searchParams.append('q', query);
-    url.searchParams.append('api_key', API_KEY);
-    url.searchParams.append('gl', 'us');
-    url.searchParams.append('hl', 'en');
+    // If we're explicitly set to only use mock data, return it immediately
+    if (USE_MOCK_DATA_ONLY && IS_DEVELOPMENT) {
+      console.log('Using mock data by configuration (USE_MOCK_DATA_ONLY)');
+      return getMockData(query, 'Mock data used by configuration');
+    }
     
-    // Add timestamp to prevent caching
-    url.searchParams.append('_t', Date.now().toString());
+    // Parameters for the SerpAPI request
+    const params = {
+      'engine': 'google_shopping',
+      'q': query,
+      'gl': 'us',
+      'hl': 'en'
+    };
     
     // Get the final URL with proxy
     const proxyUrlToUse = _proxyUrl || (window as any).temporaryProxyOverride || getCurrentProxy();
-    const finalUrl = proxyUrlToUse + encodeURIComponent(url.toString());
+    const finalUrl = getApiUrl('search.json', params);
     
-    console.log('Full request URL:', finalUrl);
+    console.log('Request URL:', finalUrl);
+    console.log('Using proxy:', proxyUrlToUse);
     
     // Increase the timeout to 30 seconds
     const timeout = createTimeout(30000);
     
     try {
-      const requestOptions = getRequestOptions(timeout.signal);
+      const requestOptions = getRequestOptions(timeout.signal, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+      
       console.log('Request options:', JSON.stringify(requestOptions));
       
       const response = await fetch(finalUrl, requestOptions);
@@ -75,8 +94,8 @@ export const searchProducts = async ({
   } catch (error) {
     console.error("Error fetching from SerpAPI:", error);
     
-    // Only use mock data if explicitly allowed
-    if (process.env.NODE_ENV === 'development' && shouldReturnMockData(error)) {
+    // Only use mock data if in development
+    if (IS_DEVELOPMENT && shouldReturnMockData(error)) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.log(`Using mock data due to: ${errorMessage}`);
       return getMockData(query, errorMessage);
@@ -90,7 +109,7 @@ export const searchProducts = async ({
 // Function to determine if mock data should be returned
 function shouldReturnMockData(error: unknown): boolean {
   // In production, we should never use mock data unless explicitly configured to do so
-  if (process.env.NODE_ENV === 'production') {
+  if (!IS_DEVELOPMENT) {
     return false;
   }
   
@@ -99,7 +118,8 @@ function shouldReturnMockData(error: unknown): boolean {
     return error.message.includes('Failed to fetch') || 
            error.message.includes('Network Error') ||
            error.message.includes('CORS') ||
-           error.message.includes('AbortError');
+           error.message.includes('AbortError') ||
+           error.message.includes('quota exceeded');
   }
   return false; // Default to not using mock data for unknown errors
 }

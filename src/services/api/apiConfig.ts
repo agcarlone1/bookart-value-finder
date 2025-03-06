@@ -6,6 +6,8 @@ export const API_KEY = '4bce77d816528a3073a7ff2607e3cb2b3ff477cfc43bc5bbca830353
 
 // API endpoints
 export const API_BASE_URL = 'https://serpapi.com';
+
+// CORS proxy settings
 export const PROXY_ENABLED = true;
 
 // List of CORS proxies to try (in order of preference)
@@ -13,8 +15,18 @@ export const CORS_PROXIES = [
   'https://corsproxy.io/?',
   'https://api.allorigins.win/raw?url=',
   'https://cors-anywhere.herokuapp.com/',
-  'https://cors-proxy.htmldriven.com/?url='
+  'https://cors-proxy.htmldriven.com/?url=',
+  'https://proxy.cors.sh/',
+  'https://thingproxy.freeboard.io/fetch/',
+  'https://crossorigin.me/',
 ];
+
+// Check if we're in development
+export const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
+
+// Determines whether to bypass CORS completely and use mock data
+// This is useful for development when all proxies are failing
+export const USE_MOCK_DATA_ONLY = false;
 
 // Get current proxy URL from localStorage or use default
 export const getCurrentProxy = (): string => {
@@ -31,23 +43,49 @@ export const saveCurrentProxy = (proxyIndex: number): void => {
   localStorage.setItem('selectedProxy', proxyIndex.toString());
 };
 
-// Get the final URL based on proxy settings
-export const getApiUrl = (url: string): string => {
-  if (!PROXY_ENABLED) return url;
-  const currentProxy = getCurrentProxy();
-  return `${currentProxy}${encodeURIComponent(url)}`;
+// Get direct URL (no proxy)
+export const getDirectApiUrl = (endpoint: string, params: Record<string, string>): string => {
+  const url = new URL(`${API_BASE_URL}/${endpoint}`);
+  
+  // Add all parameters to the URL
+  Object.entries(params).forEach(([key, value]) => {
+    url.searchParams.append(key, value);
+  });
+  
+  // Add API key
+  url.searchParams.append('api_key', API_KEY);
+  
+  // Add timestamp to prevent caching
+  url.searchParams.append('_t', Date.now().toString());
+  
+  return url.toString();
 };
 
-// Common request options
-export const getRequestOptions = (signal: AbortSignal) => ({
+// Get the final URL based on proxy settings
+export const getApiUrl = (endpoint: string, params: Record<string, string>): string => {
+  const directUrl = getDirectApiUrl(endpoint, params);
+  
+  if (!PROXY_ENABLED) return directUrl;
+  
+  const currentProxy = getCurrentProxy();
+  return `${currentProxy}${encodeURIComponent(directUrl)}`;
+};
+
+// Common request options with customization
+export const getRequestOptions = (
+  signal: AbortSignal, 
+  options: RequestInit = {}
+) => ({
   method: 'GET',
   headers: {
     'Accept': 'application/json',
-    'Cache-Control': 'no-cache'
+    'Cache-Control': 'no-cache',
+    ...options.headers,
   },
   signal,
   cache: 'no-store' as RequestCache,
   mode: 'cors' as RequestMode,
+  ...options,
 });
 
 // Common timeout handler
