@@ -30,6 +30,7 @@ interface WishlistContextType {
   isInWishlist: (productId: string) => boolean;
   clearWishlist: () => void;
   clearSearchHistory: () => void;
+  addToSearchHistory: (searchTerm: string, searchType: 'image' | 'url') => void;
 }
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
@@ -136,6 +137,7 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
       isInWishlist,
       clearWishlist,
       clearSearchHistory,
+      addToSearchHistory,
     }}>
       {children}
     </WishlistContext.Provider>
