@@ -3,8 +3,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import AnimatedLogo from '../ui-custom/AnimatedLogo';
 import { Button } from '@/components/ui/button';
-import { User, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { useWishlist } from '@/contexts/WishlistContext';
+import UserProfileButton from '../ui-custom/UserProfileButton';
 
 const Header: React.FC = () => {
   const { wishlistItems } = useWishlist();
@@ -29,10 +30,7 @@ const Header: React.FC = () => {
             </Button>
           </Link>
           
-          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-            <User size={18} className="mr-1" />
-            <span>Sign In</span>
-          </Button>
+          <UserProfileButton />
         </div>
       </div>
     </header>
