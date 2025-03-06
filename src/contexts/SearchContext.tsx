@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 import { searchProducts, extractSearchQueryFromImage } from '@/services/serpApiService';
 
 type SearchType = 'image' | 'url';
@@ -34,10 +35,18 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       
       // Handle different search types
       if (data.type === 'image' && data.value instanceof File) {
+        sonnerToast.loading('Analyzing image...', {
+          id: 'image-analysis',
+        });
+        
         query = await extractSearchQueryFromImage(data.value);
+        
+        sonnerToast.success('Image analyzed', {
+          id: 'image-analysis',
+          description: `Searching for: ${query}`,
+        });
       } else if (data.type === 'url' && typeof data.value === 'string') {
-        // For URL, we'll just use the last part of the URL as a simple mock
-        // In a real app, you would fetch the URL and analyze its contents
+        // For URL, we'll just use the last part of the URL as a simple query
         const urlParts = data.value.split('/');
         query = urlParts[urlParts.length - 1].replace(/[-_]/g, ' ');
         if (!query) query = data.value;
@@ -45,10 +54,20 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       
       setSearchTerm(query);
       
+      sonnerToast.loading('Searching for the best value...', {
+        id: 'search',
+        duration: 10000,
+      });
+      
       // Perform the actual search
       const response = await searchProducts({ query });
       
       if (response.error) {
+        sonnerToast.error('Search failed', {
+          id: 'search',
+          description: response.error,
+        });
+        
         toast({
           title: "Search Error",
           description: response.error,
@@ -57,12 +76,23 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         return;
       }
       
+      sonnerToast.success('Search completed', {
+        id: 'search',
+        description: `Found ${response.shopping_results.length} results`,
+      });
+      
       setSearchResults(response.shopping_results);
       
       // Navigate to results page
       navigate('/results');
     } catch (error) {
       console.error('Search error:', error);
+      
+      sonnerToast.error('Search failed', {
+        id: 'search',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+      });
+      
       toast({
         title: "Search Failed",
         description: "An error occurred while searching. Please try again.",
