@@ -9,8 +9,16 @@ export const API_KEY = '4bce77d816528a3073a7ff2607e3cb2b3ff477cfc43bc5bbca830353
 export const API_BASE_URL = 'https://serpapi.com';
 export const PROXY_ENABLED = true; // Toggle this to use proxy
 
-// Using a more reliable CORS proxy service
-export const PROXY_URL = 'https://corsproxy.io/?'; // Changed to a more reliable CORS proxy
+// List of CORS proxies to try (in order of preference)
+export const CORS_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://cors-anywhere.herokuapp.com/',
+  'https://cors-proxy.htmldriven.com/?url='
+];
+
+// Current proxy URL - will use the first one by default
+export const PROXY_URL = CORS_PROXIES[0];
 
 // Get the final URL based on proxy settings
 export const getApiUrl = (url: string): string => {
@@ -25,8 +33,7 @@ export const getRequestOptions = (signal: AbortSignal) => ({
     'Accept': 'application/json',
     'Cache-Control': 'no-cache, no-store, must-revalidate',
     'Pragma': 'no-cache',
-    'Expires': '0',
-    // Removed the x-cors-api-key as it's not needed for corsproxy.io
+    'Expires': '0'
   },
   signal,
   cache: 'no-store' as RequestCache,

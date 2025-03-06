@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { RotateCw, CheckCircle2, XCircle, Info } from 'lucide-react';
 import { searchProducts } from '@/services/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { PROXY_ENABLED, PROXY_URL } from '@/services/api/apiConfig';
+import { PROXY_ENABLED, PROXY_URL, CORS_PROXIES } from '@/services/api/apiConfig';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const ApiTestButton = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,6 +13,7 @@ const ApiTestButton = () => {
   const [response, setResponse] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [networkDetails, setNetworkDetails] = useState<string | null>(null);
+  const [proxyIndex, setProxyIndex] = useState(0);
 
   const testApi = async () => {
     try {
@@ -25,7 +27,19 @@ const ApiTestButton = () => {
       const testQuery = 'apple iphone';
       console.log('Testing API with query:', testQuery);
       
-      const result = await searchProducts({ query: testQuery, limit: 3 });
+      // Try the API call with the selected proxy
+      const useProxyUrl = CORS_PROXIES[proxyIndex];
+      console.log(`Using proxy: ${useProxyUrl}`);
+      
+      // We need to temporarily override the proxy in the API config
+      // This doesn't persist - it's just for this test
+      (window as any).temporaryProxyOverride = useProxyUrl;
+      
+      const result = await searchProducts({ 
+        query: testQuery, 
+        limit: 3,
+        _proxyUrl: useProxyUrl // Pass the proxy URL to the search function
+      });
       
       console.log('API test result:', result);
       
@@ -33,9 +47,14 @@ const ApiTestButton = () => {
       if (result.search_metadata.status === 'Success (Mock)') {
         setStatus('error');
         setErrorMessage('Received mock data instead of real API data');
-        setNetworkDetails(`Using CORS proxy: ${PROXY_ENABLED ? 'Yes' : 'No'}\nProxy URL: ${PROXY_URL}\n\nTry changing the PROXY_URL in apiConfig.ts if this proxy is not working.`);
+        setNetworkDetails(
+          `Using CORS proxy: ${PROXY_ENABLED ? 'Yes' : 'No'}\n` +
+          `Proxy URL: ${useProxyUrl}\n\n` +
+          `This proxy is not working. Please try a different one.`
+        );
       } else {
         setStatus('success');
+        setNetworkDetails(`Successfully connected using proxy: ${useProxyUrl}`);
       }
       
       // Store response for display
@@ -45,22 +64,22 @@ const ApiTestButton = () => {
       console.error('API test failed:', error);
       setStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
-      setNetworkDetails(`Using CORS proxy: ${PROXY_ENABLED ? 'Yes' : 'No'}\nProxy URL: ${PROXY_URL}\n\nTry changing the PROXY_URL in apiConfig.ts if this proxy is not working.`);
+      setNetworkDetails(
+        `Using CORS proxy: ${PROXY_ENABLED ? 'Yes' : 'No'}\n` +
+        `Proxy URL: ${CORS_PROXIES[proxyIndex]}\n\n` +
+        `This proxy is not working. Please try a different one.`
+      );
     } finally {
       setIsLoading(false);
+      // Clean up the temporary override
+      delete (window as any).temporaryProxyOverride;
     }
   };
 
-  const toggleProxy = () => {
-    // Inform the user about how to change the proxy
-    setNetworkDetails(
-      `To change the CORS proxy service, edit the PROXY_URL in src/services/api/apiConfig.ts.\n\n` +
-      `Current options in the code comments include:\n` +
-      `- https://corsproxy.io/?\n` + 
-      `- https://cors-proxy.htmldriven.com/?url=\n` + 
-      `- https://cors-anywhere.herokuapp.com/\n\n` +
-      `You may also need to set PROXY_ENABLED to false if all proxies fail.`
-    );
+  const handleProxyChange = (value: string) => {
+    const index = parseInt(value, 10);
+    setProxyIndex(index);
+    setNetworkDetails(`Selected proxy: ${CORS_PROXIES[index]}`);
   };
 
   return (
@@ -68,6 +87,29 @@ const ApiTestButton = () => {
       <h3 className="font-medium text-lg">API Connection Test</h3>
       
       <div className="space-y-2">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm text-gray-500">Select CORS Proxy:</label>
+          <Select 
+            value={String(proxyIndex)} 
+            onValueChange={handleProxyChange}
+            disabled={isLoading}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a CORS proxy" />
+            </SelectTrigger>
+            <SelectContent>
+              {CORS_PROXIES.map((proxy, index) => (
+                <SelectItem key={proxy} value={String(index)}>
+                  Proxy {index + 1}: {proxy.substring(0, 30)}...
+                </SelectItem>
+              ))}
+              <SelectItem value={String(CORS_PROXIES.length)}>
+                No proxy (direct connection)
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
         <Button 
           onClick={testApi}
           disabled={isLoading}
@@ -82,17 +124,6 @@ const ApiTestButton = () => {
             'Test SerpAPI Connection'
           )}
         </Button>
-        
-        {status === 'error' && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={toggleProxy}
-            className="text-xs w-full"
-          >
-            Show proxy configuration help
-          </Button>
-        )}
       </div>
       
       {status === 'success' && (
@@ -100,6 +131,11 @@ const ApiTestButton = () => {
           <CheckCircle2 className="h-4 w-4 text-green-600" />
           <AlertDescription>
             API connection successful! Received {response?.shopping_results?.length || 0} results.
+            {networkDetails && (
+              <div className="mt-2 text-xs font-mono whitespace-pre-line">
+                <Info className="h-3 w-3 inline mr-1" /> {networkDetails}
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       )}

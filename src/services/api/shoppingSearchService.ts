@@ -1,7 +1,11 @@
-import { API_KEY, API_BASE_URL, createTimeout, getRequestOptions, getApiUrl } from './apiConfig';
+import { API_KEY, API_BASE_URL, createTimeout, getRequestOptions, getApiUrl, PROXY_URL } from './apiConfig';
 import { SerpApiResponse, SearchOptions } from './types';
 
-export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Promise<SerpApiResponse> => {
+export const searchProducts = async ({ 
+  query, 
+  limit = 10, 
+  _proxyUrl 
+}: SearchOptions & { _proxyUrl?: string }): Promise<SerpApiResponse> => {
   try {
     console.log('Fetching from SerpAPI with query:', query);
     
@@ -17,7 +21,10 @@ export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Prom
     url.searchParams.append('_t', Date.now().toString());
     
     // Get the final URL with proxy if enabled
-    const finalUrl = getApiUrl(url.toString());
+    // Use the provided proxy URL if available, otherwise use the default
+    const proxyUrlToUse = _proxyUrl || (window as any).temporaryProxyOverride || PROXY_URL;
+    const finalUrl = getApiUrl(url.toString()).replace(PROXY_URL, proxyUrlToUse);
+    
     console.log('Using URL:', finalUrl);
     
     // Increase the timeout to 30 seconds for production environment
@@ -99,6 +106,13 @@ function shouldReturnMockData(error: unknown): boolean {
            error.message.includes('AbortError');
   }
   return true; // Default to mock data for unknown errors
+}
+
+// Update the SearchOptions type to accept the proxy parameter
+declare module './types' {
+  interface SearchOptions {
+    _proxyUrl?: string;
+  }
 }
 
 // Mock data for testing or when API fails
