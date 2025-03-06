@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 import { searchProducts, extractSearchQueryFromImage } from '@/services/serpApiService';
-import { useWishlist } from './WishlistContext';
+import { useWishlist } from '@/contexts/wishlist';
 
 type SearchType = 'image' | 'url';
 
