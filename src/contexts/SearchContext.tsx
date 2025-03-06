@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 import { searchProducts, extractSearchQueryFromImage } from '@/services/serpApiService';
-import { useWishlist } from '@/contexts/wishlist';
+import { useWishlist } from './WishlistContext';
 
 type SearchType = 'image' | 'url';
 
@@ -28,10 +28,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [isMockData, setIsMockData] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  // Get wishlist context, handle the case where it might be undefined during initialization
-  const wishlistContext = useWishlist();
-  const { searchHistory = [], addToSearchHistory = () => {} } = wishlistContext || {};
+  const { searchHistory, addToSearchHistory } = useWishlist();
 
   const performSearch = async (data: { type: SearchType, value: string | File }) => {
     try {
@@ -71,7 +68,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       const response = await searchProducts({ query });
       
       // Check if we're using mock data
-      if (response.search_metadata?.status === 'Success (Mock)') {
+      if (response.search_metadata.status === 'Success (Mock)') {
         setIsMockData(true);
         sonnerToast.info('Using demo data', {
           id: 'search',
@@ -80,15 +77,15 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       } else {
         sonnerToast.success('Search completed', {
           id: 'search',
-          description: `Found ${response.shopping_results?.length || 0} results`,
+          description: `Found ${response.shopping_results.length} results`,
         });
       }
       
       if (response.shopping_results && response.shopping_results.length > 0) {
         setSearchResults(response.shopping_results);
         
-        // Add to search history if wishlist context is available
-        if (query && addToSearchHistory) {
+        // Add to search history
+        if (query) {
           addToSearchHistory(query, data.type);
         }
         

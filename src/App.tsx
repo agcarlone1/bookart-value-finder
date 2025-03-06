@@ -9,8 +9,7 @@ import Results from "./pages/Results";
 import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound";
 import { SearchProvider } from "./contexts/SearchContext";
-import { WishlistProvider } from "./contexts/wishlist";
-import { AuthProvider } from "./contexts/AuthContext";
+import { WishlistProvider } from "./contexts/WishlistContext";
 
 const queryClient = new QueryClient();
 
@@ -18,20 +17,18 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <BrowserRouter>
-        <AuthProvider>
-          <WishlistProvider>
-            <SearchProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/results" element={<Results />} />
-                <Route path="/wishlist" element={<Wishlist />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </SearchProvider>
-          </WishlistProvider>
-        </AuthProvider>
+        <WishlistProvider>
+          <SearchProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/results" element={<Results />} />
+              <Route path="/wishlist" element={<Wishlist />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </SearchProvider>
+        </WishlistProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

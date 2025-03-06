@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { ArrowRight, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useWishlist } from '@/contexts/wishlist';
+import { useWishlist } from '@/contexts/WishlistContext';
 
 interface ProductCardProps {
   product: {
