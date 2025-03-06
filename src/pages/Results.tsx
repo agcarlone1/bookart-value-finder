@@ -100,7 +100,7 @@ const Results = () => {
             </Alert>
           )}
           
-          <TabView>
+          <TabView tabs={["Lowest Price", "Insights"]}>
             {/* Lowest Price Tab */}
             <div>
               {isSearching ? (
