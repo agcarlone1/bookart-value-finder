@@ -69,9 +69,33 @@ export interface LensApiResponse {
   error?: string;
 }
 
+// Google Lens Exact Matches API types
+export interface ExactMatch {
+  title: string;
+  link: string;
+  thumbnail: string;
+  source: string;
+  price?: string;
+  extracted_price?: number;
+  rating?: number;
+  reviews?: number;
+}
+
+export interface LensExactMatchesResponse {
+  search_metadata: SerpApiMetadata;
+  search_parameters: SearchParameters;
+  exact_matches: ExactMatch[];
+  error?: string;
+}
+
 // Search options
 export interface SearchOptions {
   query: string;
   limit?: number;
   isBook?: boolean;
+}
+
+// Google Lens Request
+export interface GoogleLensRequest {
+  imageUrl: string;
 }

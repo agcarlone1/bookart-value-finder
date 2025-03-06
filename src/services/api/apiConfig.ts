@@ -74,6 +74,13 @@ export const getLensApiParams = (): Record<string, string> => ({
   'hl': 'en',
 });
 
+export const getLensExactMatchesParams = (imageUrl: string): Record<string, string> => ({
+  'engine': 'google_lens_exact_matches',
+  'url': imageUrl,
+  'gl': 'us',
+  'hl': 'en',
+});
+
 // Request helpers
 export const createTimeout = (ms: number) => {
   const controller = new AbortController();
