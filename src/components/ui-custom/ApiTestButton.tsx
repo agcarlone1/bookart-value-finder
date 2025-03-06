@@ -33,7 +33,7 @@ const ApiTestButton = () => {
       if (result.search_metadata.status === 'Success (Mock)') {
         setStatus('error');
         setErrorMessage('Received mock data instead of real API data');
-        setNetworkDetails(`Using CORS proxy: ${PROXY_ENABLED ? 'Yes' : 'No'}\nProxy URL: ${PROXY_URL}`);
+        setNetworkDetails(`Using CORS proxy: ${PROXY_ENABLED ? 'Yes' : 'No'}\nProxy URL: ${PROXY_URL}\n\nTry changing the PROXY_URL in apiConfig.ts if this proxy is not working.`);
       } else {
         setStatus('success');
       }
@@ -45,16 +45,22 @@ const ApiTestButton = () => {
       console.error('API test failed:', error);
       setStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
-      setNetworkDetails(`Using CORS proxy: ${PROXY_ENABLED ? 'Yes' : 'No'}\nProxy URL: ${PROXY_URL}`);
+      setNetworkDetails(`Using CORS proxy: ${PROXY_ENABLED ? 'Yes' : 'No'}\nProxy URL: ${PROXY_URL}\n\nTry changing the PROXY_URL in apiConfig.ts if this proxy is not working.`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const tryAgainWithoutProxy = async () => {
-    // This function cannot directly modify the global PROXY_ENABLED setting
-    // But it shows the user how they could adjust it
-    setNetworkDetails("To try without the CORS proxy, you would need to set PROXY_ENABLED to false in apiConfig.ts");
+  const toggleProxy = () => {
+    // Inform the user about how to change the proxy
+    setNetworkDetails(
+      `To change the CORS proxy service, edit the PROXY_URL in src/services/api/apiConfig.ts.\n\n` +
+      `Current options in the code comments include:\n` +
+      `- https://corsproxy.io/?\n` + 
+      `- https://cors-proxy.htmldriven.com/?url=\n` + 
+      `- https://cors-anywhere.herokuapp.com/\n\n` +
+      `You may also need to set PROXY_ENABLED to false if all proxies fail.`
+    );
   };
 
   return (
@@ -81,7 +87,7 @@ const ApiTestButton = () => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={tryAgainWithoutProxy}
+            onClick={toggleProxy}
             className="text-xs w-full"
           >
             Show proxy configuration help
