@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -32,16 +33,14 @@ const Results = () => {
     : 0;
     
   const renderSkeletons = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-      {Array.from({ length: 9 }).map((_, i) => (
-        <div key={i} className="rounded-lg border bg-white overflow-hidden animate-pulse h-24 md:h-20">
-          <div className="flex h-full">
-            <div className="w-24 h-full bg-secondary"></div>
-            <div className="p-3 flex-grow space-y-2">
-              <div className="h-2 bg-secondary rounded w-1/4"></div>
-              <div className="h-3 bg-secondary rounded w-3/4"></div>
-              <div className="h-2 bg-secondary rounded w-1/2 mt-auto"></div>
-            </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      {Array.from({ length: 15 }).map((_, i) => (
+        <div key={i} className="rounded-lg border bg-white overflow-hidden animate-pulse">
+          <div className="h-[120px] bg-secondary"></div>
+          <div className="p-3 space-y-2">
+            <div className="h-2 bg-secondary rounded w-1/4"></div>
+            <div className="h-3 bg-secondary rounded w-3/4"></div>
+            <div className="h-2 bg-secondary rounded w-1/2 mt-auto"></div>
           </div>
         </div>
       ))}
@@ -64,12 +63,12 @@ const Results = () => {
     <div className="flex flex-col min-h-screen">
       <Header />
       
-      <main className="flex-grow py-6 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="mb-6 animate-slide-down">
+      <main className="flex-grow py-4 px-4">
+        <div className="container mx-auto max-w-7xl">
+          <div className="mb-4 animate-slide-down">
             <Button 
               variant="ghost" 
-              className="mb-3 text-sm"
+              className="mb-2 text-sm"
               onClick={() => navigate('/')}
             >
               <ArrowLeft size={16} className="mr-1" />
@@ -92,7 +91,7 @@ const Results = () => {
               {isSearching ? (
                 renderSkeletons()
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 animate-slide-up">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 animate-slide-up">
                   {products.length > 0 ? (
                     formatProducts(products)
                       .sort((a, b) => a.price - b.price)

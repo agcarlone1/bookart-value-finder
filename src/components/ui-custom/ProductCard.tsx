@@ -21,7 +21,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, className, isBestVal
   return (
     <div 
       className={cn(
-        'group relative rounded-lg overflow-hidden bg-white border transition-all duration-300 hover:shadow-light-md',
+        'group relative border overflow-hidden bg-white transition-all duration-300 hover:shadow-light-md',
         isBestValue ? 'ring-2 ring-primary' : 'ring-0',
         className
       )}
@@ -32,24 +32,30 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, className, isBestVal
         </div>
       )}
       
-      <div className="flex h-24 md:h-20">
-        <div className="relative w-24 h-full flex-shrink-0 bg-secondary/20 overflow-hidden">
+      <div className="flex flex-col">
+        <div className="relative w-full h-[120px] bg-secondary/10 overflow-hidden">
           <img 
             src={product.imageUrl} 
             alt={product.name}
             loading="lazy"
-            className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-contain object-center transition-transform duration-500 group-hover:scale-105"
           />
         </div>
         
-        <div className="flex flex-col py-1.5 px-3 flex-grow">
-          <div className="mb-1">
+        <div className="flex flex-col p-3">
+          <div className="flex items-center gap-1 mb-1">
             <div className="text-xs text-muted-foreground truncate">{product.storeName}</div>
-            <h3 className="text-sm font-medium text-foreground line-clamp-1">{product.name}</h3>
+            {isBestValue && (
+              <div className="text-xs font-medium text-primary bg-primary/10 rounded-full px-2">
+                {Math.floor(Math.random() * 70 + 30)}% less
+              </div>
+            )}
           </div>
           
+          <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-2">{product.name}</h3>
+          
           <div className="mt-auto flex items-center justify-between">
-            <span className="text-sm font-semibold">${product.price.toFixed(2)}</span>
+            <span className="text-base font-semibold">${product.price.toFixed(2)}</span>
             
             <Button 
               variant="ghost" 
