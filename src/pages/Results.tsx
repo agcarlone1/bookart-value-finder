@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -6,7 +5,7 @@ import TabView from '@/components/ui-custom/TabView';
 import SearchBanner from '@/components/ui-custom/SearchBanner';
 import ProductList from '@/components/ui-custom/ProductList';
 import InsightsPanel from '@/components/ui-custom/InsightsPanel';
-import { useSearch } from '@/contexts/SearchContext';
+import { useSearch } from '@/contexts/search';
 
 const Results = () => {
   const { searchTerm, searchResults, isSearching, isMockData } = useSearch();

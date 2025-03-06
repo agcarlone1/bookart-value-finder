@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Search, Upload, Link, ArrowRight } from 'lucide-react';
 import ImageUploader from './ImageUploader';
 import UrlInput from './UrlInput';
-import { useSearch } from '@/contexts/SearchContext';
+import { useSearch } from '@/contexts/search';
 
 interface SearchBoxProps {
   className?: string;

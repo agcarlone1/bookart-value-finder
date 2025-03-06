@@ -8,7 +8,7 @@ import Index from "./pages/Index";
 import Results from "./pages/Results";
 import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound";
-import { SearchProvider } from "./contexts/SearchContext";
+import { SearchProvider } from "./contexts/search";
 import { WishlistProvider } from "./contexts/WishlistContext";
 
 const queryClient = new QueryClient();
