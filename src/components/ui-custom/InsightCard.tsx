@@ -13,17 +13,17 @@ const InsightCard: React.FC<InsightCardProps> = ({ type, value, className }) => 
   const renderIcon = () => {
     switch (type) {
       case 'highest-price':
-        return <TrendingUp className="h-5 w-5 text-amber-500" />;
+        return <TrendingUp className="h-4 w-4 text-amber-500" />;
       case 'lowest-price':
-        return <TrendingDown className="h-5 w-5 text-emerald-500" />;
+        return <TrendingDown className="h-4 w-4 text-emerald-500" />;
       case 'profit':
-        return <DollarSign className="h-5 w-5 text-green-500" />;
+        return <DollarSign className="h-4 w-4 text-green-500" />;
       case 'average-price':
-        return <Sigma className="h-5 w-5 text-blue-500" />;
+        return <Sigma className="h-4 w-4 text-blue-500" />;
       case 'listing-count':
-        return <ListOrdered className="h-5 w-5 text-purple-500" />;
+        return <ListOrdered className="h-4 w-4 text-purple-500" />;
       case 'resale-potential':
-        return <Star className="h-5 w-5 text-primary" />;
+        return <Star className="h-4 w-4 text-primary" />;
       default:
         return null;
     }
@@ -86,8 +86,8 @@ const InsightCard: React.FC<InsightCardProps> = ({ type, value, className }) => 
         className
       )}
     >
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 p-2 rounded-lg bg-secondary/50">
+      <div className="flex items-start gap-2">
+        <div className="flex-shrink-0 p-1.5 rounded-md bg-secondary/50">
           {renderIcon()}
         </div>
         
