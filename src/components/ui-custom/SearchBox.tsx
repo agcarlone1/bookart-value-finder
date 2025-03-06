@@ -17,8 +17,10 @@ const SearchBox: React.FC<SearchBoxProps> = ({ className }) => {
   const [url, setUrl] = useState<string>('');
   const { performSearch, isSearching } = useSearch();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     
     if ((activeTab === 'image' && imageFile) || (activeTab === 'url' && url)) {
       performSearch({ 
