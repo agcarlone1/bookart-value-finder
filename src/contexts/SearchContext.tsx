@@ -28,7 +28,10 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [isMockData, setIsMockData] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { searchHistory, addToSearchHistory } = useWishlist();
+  
+  // Get wishlist context, handle the case where it might be undefined during initialization
+  const wishlistContext = useWishlist();
+  const { searchHistory = [], addToSearchHistory = () => {} } = wishlistContext || {};
 
   const performSearch = async (data: { type: SearchType, value: string | File }) => {
     try {
@@ -68,7 +71,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       const response = await searchProducts({ query });
       
       // Check if we're using mock data
-      if (response.search_metadata.status === 'Success (Mock)') {
+      if (response.search_metadata?.status === 'Success (Mock)') {
         setIsMockData(true);
         sonnerToast.info('Using demo data', {
           id: 'search',
@@ -77,15 +80,15 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       } else {
         sonnerToast.success('Search completed', {
           id: 'search',
-          description: `Found ${response.shopping_results.length} results`,
+          description: `Found ${response.shopping_results?.length || 0} results`,
         });
       }
       
       if (response.shopping_results && response.shopping_results.length > 0) {
         setSearchResults(response.shopping_results);
         
-        // Add to search history
-        if (query) {
+        // Add to search history if wishlist context is available
+        if (query && addToSearchHistory) {
           addToSearchHistory(query, data.type);
         }
         
