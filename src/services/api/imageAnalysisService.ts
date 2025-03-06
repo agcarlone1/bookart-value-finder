@@ -1,4 +1,3 @@
-
 import { API_KEY, API_BASE_URL, createTimeout, getLensApiParams } from './apiConfig';
 import { LensApiResponse } from './types';
 
@@ -9,7 +8,7 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
     // Create form data to send the image file
     const formData = new FormData();
     formData.append('api_key', API_KEY);
-    formData.append('engine', 'google_lens'); // Change engine name here
+    formData.append('engine', 'google_lens'); // Using google_lens engine which returns both exact and visual matches
     formData.append('image_file', imageFile);
     
     // Add lens-specific parameters
@@ -62,7 +61,27 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
         throw new Error(data.error);
       }
       
-      // First, check for visual matches which are the main results in google_lens engine
+      // PRIORITIZE EXACT MATCHES - they're often more accurate
+      if (data.exact_matches && data.exact_matches.length > 0) {
+        console.log("Found exact matches:", data.exact_matches.length);
+        
+        // First pass: Look specifically for book titles and authors in exact matches
+        for (const match of data.exact_matches) {
+          const title = match.title.toLowerCase();
+          
+          // Check if this looks like a book result
+          if (isBookTitle(title)) {
+            console.log("Found book match in exact matches:", match.title);
+            return cleanBookTitle(match.title) + " book";
+          }
+        }
+        
+        // If no book-specific match was found, use the first exact match
+        console.log("Using first exact match as search term:", data.exact_matches[0].title);
+        return data.exact_matches[0].title;
+      }
+      
+      // FALLBACK TO VISUAL MATCHES if no exact matches
       if (data.visual_matches && data.visual_matches.length > 0) {
         console.log("Analyzing visual matches:", data.visual_matches.length);
         
@@ -94,26 +113,6 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
         // Fallback to first visual match
         console.log("Using first visual match as search term:", data.visual_matches[0].title);
         return data.visual_matches[0].title;
-      }
-      
-      // Then check for exact matches
-      if (data.exact_matches && data.exact_matches.length > 0) {
-        console.log("Found exact matches:", data.exact_matches.length);
-        
-        // Examine exact matches for book indicators
-        for (const match of data.exact_matches) {
-          const title = match.title.toLowerCase();
-          
-          // Check if this is likely a book
-          if (isBookTitle(title)) {
-            console.log("Found book match in exact matches:", match.title);
-            return cleanBookTitle(match.title) + " book";
-          }
-        }
-        
-        // If we didn't find specific book indicators but have exact matches
-        console.log("Using first exact match as search term:", data.exact_matches[0].title);
-        return data.exact_matches[0].title;
       }
       
       // Try to extract any text visible in the image through OCR data

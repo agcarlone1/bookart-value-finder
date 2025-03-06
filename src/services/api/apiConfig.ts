@@ -127,7 +127,7 @@ export const getBookSearchParams = (query: string): Record<string, string> => {
 // Google Lens API parameters
 export const getLensApiParams = (): Record<string, string> => {
   return {
-    'engine': 'google_lens',  // Changed from 'google_lens_exact_matches' to 'google_lens'
+    'engine': 'google_lens',  // This engine returns both exact_matches and visual_matches
     'gl': 'us',
     'hl': 'en',
   };

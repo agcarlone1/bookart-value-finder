@@ -29,7 +29,14 @@ export const processImageSearch = async (imageFile: File): Promise<string> => {
     });
     
     const fileName = imageFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-    return fileName.length > 3 ? fileName + " book" : "Photography book";
+    
+    if (fileName.toLowerCase().includes('book') || 
+        fileName.toLowerCase().includes('novel') || 
+        fileName.toLowerCase().includes('author')) {
+      return fileName + " book";
+    }
+    
+    return fileName.length > 3 ? fileName : "Photography book";
   }
 };
 

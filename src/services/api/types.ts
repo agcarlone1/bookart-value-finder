@@ -54,8 +54,8 @@ export interface ExactMatch {
 export interface LensApiResponse {
   search_metadata: SerpApiMetadata;
   search_parameters: SearchParameters;
-  visual_matches?: ExactMatch[];  // Changed from exact_matches to visual_matches as primary result
-  exact_matches?: ExactMatch[];   // Keep exact_matches as secondary
+  exact_matches?: ExactMatch[];   // Put exact_matches first as they're often more accurate
+  visual_matches?: ExactMatch[];  // Keep visual_matches as secondary
   knowledge_graph?: {
     title?: string;
     type?: string;
