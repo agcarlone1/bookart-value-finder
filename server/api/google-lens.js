@@ -13,6 +13,27 @@ console.log('Server: /api/google-lens endpoint module loaded');
 exports.handleRequest = handleGoogleLensRequest;
 
 /**
+ * Default export for Next.js API routes and similar frameworks
+ */
+module.exports = handleGoogleLensRequest;
+
+/**
+ * Alternative export format for ESM
+ */
+export default function handler(req, res) {
+  console.log('Server: /api/google-lens default handler called with method:', req.method);
+  
+  // Explicitly check for POST method
+  if (req.method !== 'POST') {
+    console.log('Server: Method not allowed:', req.method);
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+  
+  // If it's a POST request, use the handleGoogleLensRequest function
+  return handleGoogleLensRequest(req, res);
+}
+
+/**
  * Serverless function handler (Netlify/Vercel/AWS Lambda)
  */
 exports.handler = async (event) => {
@@ -23,6 +44,7 @@ exports.handler = async (event) => {
   try {
     // Convert the serverless request to Express-like format
     const req = {
+      method: event.httpMethod || 'POST', // Ensure method is explicitly set
       headers: event.headers || {},
       body: JSON.parse(event.body || '{}')
     };
@@ -41,6 +63,16 @@ exports.handler = async (event) => {
         return res;
       }
     };
+    
+    // Check method explicitly
+    if (req.method !== 'POST') {
+      console.log('Server: Serverless - Method not allowed:', req.method);
+      return {
+        statusCode: 405,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: "Method Not Allowed" })
+      };
+    }
     
     // Call the Express handler
     await handleGoogleLensRequest(req, res);

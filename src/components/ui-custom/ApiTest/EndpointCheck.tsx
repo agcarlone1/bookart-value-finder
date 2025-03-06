@@ -89,10 +89,10 @@ const EndpointCheck = () => {
         setResponseStatus(testResponse.status);
         console.log(`POST test response status: ${testResponse.status}`);
         
-        // Get the raw response
+        // Get the raw response even if status is not 200
         const rawText = await testResponse.text();
-        setRawResponse(rawText);
-        console.log('Raw response:', rawText);
+        setRawResponse(rawText || '(empty response)');
+        console.log('Raw response:', rawText || '(empty response)');
         
         // If the response is JSON, parse and check it
         let jsonData = null;
@@ -121,11 +121,45 @@ const EndpointCheck = () => {
         
         // Generate detailed analysis based on the specific POST status code
         if (postStatus === 404) {
-          setDetails(`The endpoint ${endpoint} exists (HEAD returned ${headStatus}), but does not handle POST requests (404).\n\nThis indicates the server route is registered but either doesn't have a POST handler implemented or the handler is misconfigured.`);
+          setDetails(
+            `The endpoint ${endpoint} exists (HEAD returned ${headStatus}), but does not handle POST requests (404).\n\n` +
+            `Debugging steps:\n` +
+            `1. Check server/api/google-lens.js exists (it should)\n` + 
+            `2. Make sure it exports both a default handler and a handleRequest function\n` +
+            `3. Verify the export format is compatible with your server framework\n` +
+            `4. Check server logs for any errors during route registration\n` +
+            `5. Ensure the server is properly importing the google-lens.js file\n` +
+            `6. Some frameworks need explicit route registration in a central file - check your server config`
+          );
+        } else if (postStatus === 405) {
+          setDetails(
+            `The endpoint ${endpoint} exists but returned Method Not Allowed (405).\n\n` +
+            `This means the route is rejecting POST requests, usually because:\n` +
+            `1. The handler explicitly checks for method types and rejects POST\n` +
+            `2. The framework is configured to only allow specific methods\n` +
+            `3. Check the method checking logic in google-lens.js\n` +
+            `4. Review server logs for any rejection messages`
+          );
         } else if (postStatus === 500) {
-          setDetails(`The endpoint ${endpoint} exists (HEAD returned ${headStatus}), but returned a server error (500) when testing with POST.\n\nThis indicates the route handler has an internal error in the server-side code.`);
+          setDetails(
+            `The endpoint ${endpoint} exists (HEAD returned ${headStatus}), but returned a server error (500) when testing with POST.\n\n` +
+            `This indicates the POST handler exists but has an internal error:\n` +
+            `1. Check server logs for error stack traces\n` +
+            `2. Verify environment variables like SERPAPI_KEY are set\n` +
+            `3. Check for syntax errors in the handler code\n` +
+            `4. Look for issues in how the request body is processed\n` +
+            `5. The error might be in the googleLensService implementation`
+          );
         } else {
-          setDetails(`The endpoint ${endpoint} exists (HEAD returned ${headStatus}), but returned an unexpected status (${postStatus}) when testing with POST.\n\nThis requires investigation in the server-side code.`);
+          setDetails(
+            `The endpoint ${endpoint} exists (HEAD returned ${headStatus}), but returned an unexpected status (${postStatus}) when testing with POST.\n\n` +
+            `Debugging steps:\n` +
+            `1. Review server logs for detailed error information\n` +
+            `2. Check the response for error messages\n` +
+            `3. Verify the endpoint is properly handling the POST request body\n` +
+            `4. Test with a different image URL\n` +
+            `5. Check for any middleware that might be affecting the request`
+          );
         }
       }
     } catch (error) {
@@ -139,6 +173,7 @@ const EndpointCheck = () => {
       if (responseStatus === 404) {
         suggestionText += '• Route Issue: The route /api/google-lens is not registered on your server\n';
         suggestionText += '• Expected Location: Ensure server/api/google-lens.js exists\n';
+        suggestionText += '• Server Import: Check if the server imports and registers this file\n';
         suggestionText += '• Handler Configuration: Check that the route correctly handles both HEAD and POST methods\n';
         suggestionText += '• Server Implementation: Request handler might be missing or incorrectly exported\n';
         suggestionText += '• Server Restart: Restart your backend server after making changes\n';
