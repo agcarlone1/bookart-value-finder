@@ -18,7 +18,7 @@ export const CORS_PROXIES = [
 
 // Development flags
 export const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
-export const USE_MOCK_DATA = false;
+export const USE_MOCK_DATA = import.meta.env.DEV; // Default to mock data in development
 
 // Helper functions for API URLs
 export const getCurrentProxy = (): string => {

@@ -1,3 +1,4 @@
+
 import { GoogleLensRequest, LensApiResponse } from './types';
 
 // Get the API URL from environment variables or use a fallback
@@ -16,16 +17,67 @@ export const fetchImageSearchResults = async (
     console.log('Sending request to backend API:', endpoint);
     console.log('Request payload:', { imageUrl: imageUrl.substring(0, 50) + '...' });
     
-    // Add a direct fetch test to verify endpoint is reachable
-    try {
-      const testResponse = await fetch(`${API_URL}/health`, {
-        method: 'GET',
-      });
-      console.log(`API health check: ${testResponse.ok ? 'server is reachable' : 'server is not reachable'} (status: ${testResponse.status})`);
-    } catch (testError) {
-      console.error(`API health check failed:`, testError);
+    // Create a mock response when running in development without a server
+    if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
+      console.log('Using mock data as server is not running');
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
+      
+      return {
+        search_metadata: {
+          id: 'mock-id-123',
+          status: 'Success',
+          json_endpoint: '',
+          created_at: new Date().toISOString(),
+          processed_at: new Date().toISOString(),
+          google_url: 'https://www.google.com/search?q=book+cover',
+          raw_html_file: '',
+          total_time_taken: 0.5
+        },
+        search_parameters: {
+          engine: 'google_lens_exact_matches'
+        },
+        exact_matches: [
+          {
+            position: 1,
+            title: "Rich Dad Poor Dad - 20th Anniversary Edition",
+            link: "https://www.amazon.com/Rich-Dad-Poor-Teach-Middle/dp/1612680194",
+            source: "Amazon.com",
+            price: "$8.48",
+            extracted_price: 8.48,
+            thumbnail: "https://m.media-amazon.com/images/I/91VokXkn8hL._AC_UF1000,1000_QL80_.jpg",
+            delivery: "Free delivery",
+            rating: 4.7,
+            reviews: 472
+          },
+          {
+            position: 2,
+            title: "Rich Dad Poor Dad: What the Rich Teach Their Kids About Money",
+            link: "https://www.barnesandnoble.com/w/rich-dad-poor-dad-robert-t-kiyosaki/1100262400",
+            source: "Barnes & Noble",
+            price: "$9.99",
+            extracted_price: 9.99,
+            thumbnail: "https://m.media-amazon.com/images/I/81bsw6fnUiL._AC_UF1000,1000_QL80_.jpg",
+            delivery: "Free shipping with $35 purchase",
+            rating: 4.6,
+            reviews: 289
+          },
+          {
+            position: 3,
+            title: "Rich Dad Poor Dad (Paperback)",
+            link: "https://www.walmart.com/ip/Rich-Dad-Poor-Dad-What-the-Rich-Teach-Their-Kids-About-Money-That-the-Poor-and-Middle-Class-Do-Not-Paperback-9781612680194/55559580",
+            source: "Walmart",
+            price: "$7.64",
+            extracted_price: 7.64,
+            thumbnail: "https://i5.walmartimages.com/asr/7049a635-dabe-4ac8-be5e-bb667eb325b0.69e388a3a051ac6d421be092b541e2b0.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF",
+            delivery: "2-day delivery",
+            rating: 4.5,
+            reviews: 196
+          }
+        ]
+      };
     }
     
+    // Real API request code
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {

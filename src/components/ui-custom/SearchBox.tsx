@@ -1,10 +1,12 @@
+
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Search, Upload, Link, ArrowRight } from 'lucide-react';
+import { Search, Upload, Link, ArrowRight, AlertCircle } from 'lucide-react';
 import ImageUploader from './ImageUploader';
 import UrlInput from './UrlInput';
 import { useSearch } from '@/contexts/search';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface SearchBoxProps {
   className?: string;
@@ -14,7 +16,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({ className }) => {
   const [activeTab, setActiveTab] = useState<'image' | 'url'>('image');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [url, setUrl] = useState<string>('');
-  const { performSearch, isSearching } = useSearch();
+  const { performSearch, isSearching, error } = useSearch();
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) {
@@ -61,6 +63,18 @@ const SearchBox: React.FC<SearchBoxProps> = ({ className }) => {
           Paste URL
         </Button>
       </div>
+      
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+            <div className="text-xs mt-1">
+              Note: For this demo to work correctly, use the simulated data option or start the Express server with: <code className="bg-gray-100 px-1 rounded">node server/index.js</code>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="min-h-[200px] flex items-center justify-center">

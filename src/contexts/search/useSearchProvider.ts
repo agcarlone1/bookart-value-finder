@@ -12,6 +12,7 @@ interface SearchContextProps {
   searchResults: ShoppingResult[] | null;
   isSearching: boolean;
   isMockData: boolean;
+  error: string | null;
   performSearch: (searchOptions: { type: 'text' | 'image' | 'url', value: string | File }) => Promise<void>;
   setSearchTerm: (term: string) => void;
   setSearchResults: (results: ShoppingResult[]) => void;
@@ -27,6 +28,7 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
   const [searchResults, setSearchResults] = useState<ShoppingResult[] | null>(null);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isMockData, setIsMockData] = useState<boolean>(USE_MOCK_DATA);
+  const [error, setError] = useState<string | null>(null);
 
   const uploadAndGetImageUrl = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -52,6 +54,7 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
     try {
       setIsSearching(true);
       setSearchTerm(query);
+      setError(null);
 
       if (isMockData) {
         // Simulate an API delay
@@ -63,9 +66,11 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
       return results.shopping_results || [];
     } catch (error) {
       console.error('Search error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to perform search';
+      setError(errorMessage);
       toast({
         title: 'Search Error',
-        description: error instanceof Error ? error.message : 'Failed to perform search',
+        description: errorMessage,
         variant: 'destructive'
       });
       return [];
@@ -77,6 +82,7 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
   const handleImageSearch = async (value: File | string): Promise<ShoppingResult[]> => {
     try {
       setIsSearching(true);
+      setError(null);
       console.log('Starting image search with value type:', typeof value);
     
       // Get the image URL (either from File or direct URL)
@@ -104,7 +110,11 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
           userMessage = 'The API endpoint (/api/google-lens) was not found. Make sure your backend server is running and properly configured.';
         } else if (response.error.includes('Unexpected end of JSON')) {
           userMessage = 'The server returned an empty or invalid response. Check your server logs for more details.';
+        } else if (response.error.includes('500')) {
+          userMessage = 'The server encountered an error processing your request. Try running the Express server with "node server/index.js" or use the mock data option.';
         }
+        
+        setError(userMessage);
         
         toast({
           title: 'API Error',
@@ -140,9 +150,11 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
       return [];
     } catch (error) {
       console.error('Image search error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to search image';
+      setError(errorMessage);
       toast({
         title: 'Search Error',
-        description: error instanceof Error ? error.message : 'Failed to search image',
+        description: errorMessage,
         variant: 'destructive'
       });
       return [];
@@ -154,6 +166,7 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
   const performSearch = useCallback(async (searchOptions: { type: 'text' | 'image' | 'url', value: string | File }) => {
     setSearchResults(null);
     setSearchTerm('');
+    setError(null);
 
     try {
       console.log('Performing search with type:', searchOptions.type);
@@ -169,9 +182,11 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
       setSearchResults(results);
     } catch (error) {
       console.error('Search failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred during the search. Please try again.';
+      setError(errorMessage);
       toast({
         title: 'Search Error',
-        description: 'An error occurred during the search. Please try again.',
+        description: errorMessage,
         variant: 'destructive'
       });
     }
@@ -182,6 +197,7 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
     searchResults,
     isSearching,
     isMockData,
+    error,
     performSearch,
     setSearchTerm,
     setSearchResults,
