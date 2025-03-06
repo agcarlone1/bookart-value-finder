@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 import { searchProducts, extractSearchQueryFromImage } from '@/services/serpApiService';
+import { useWishlist } from './WishlistContext';
 
 type SearchType = 'image' | 'url';
 
@@ -27,6 +28,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [isMockData, setIsMockData] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { searchHistory, addToSearchHistory } = useWishlist();
 
   const performSearch = async (data: { type: SearchType, value: string | File }) => {
     try {
@@ -81,6 +83,12 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       
       if (response.shopping_results && response.shopping_results.length > 0) {
         setSearchResults(response.shopping_results);
+        
+        // Add to search history
+        if (query) {
+          addToSearchHistory(query, data.type);
+        }
+        
         navigate('/results');
       } else {
         sonnerToast.error('No results found', {
