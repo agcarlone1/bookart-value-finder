@@ -67,37 +67,51 @@ interface SearchOptions {
 // But this is a publishable key for SerpAPI that can be safely included in the code
 const API_KEY = '4bce77d816528a3073a7ff2607e3cb2b3ff477cfc43bc5bbca830353830ab7f6';
 
+// Use production API endpoint
+const API_BASE_URL = 'https://serpapi.com';
+
 export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Promise<SerpApiResponse> => {
   try {
-    const url = new URL('https://serpapi.com/search.json');
+    console.log('Fetching from SerpAPI with query:', query);
+    
+    // Create URL with all necessary parameters
+    const url = new URL(`${API_BASE_URL}/search.json`);
     url.searchParams.append('engine', 'google_shopping');
     url.searchParams.append('q', query);
     url.searchParams.append('api_key', API_KEY);
     url.searchParams.append('gl', 'us');
     url.searchParams.append('hl', 'en');
-
-    console.log('Fetching from SerpAPI with query:', query);
     
-    // Increase the timeout to 15 seconds to allow for slower connections
+    // Add timestamp to prevent caching
+    url.searchParams.append('_t', Date.now().toString());
+    
+    // Increase the timeout to 20 seconds for production environment
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 seconds timeout
     
     try {
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          // Add headers to help with CORS issues
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
         signal: controller.signal,
-        // Adding cache: 'no-store' to prevent caching issues
         cache: 'no-store',
+        // Explicitly disable request caching
+        mode: 'cors',
       });
       
       clearTimeout(timeoutId);
       
       if (!response.ok) {
-        console.error(`API error: ${response.status} ${response.statusText}`);
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`SerpAPI error: ${response.status} ${response.statusText}`, errorText);
+        throw new Error(`API error (${response.status}): ${errorText || response.statusText}`);
       }
       
       const data = await response.json();
@@ -222,24 +236,36 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
     formData.append('engine', 'google_lens_exact_matches');
     formData.append('image_file', imageFile);
     
-    // Increase the timeout to 30 seconds for image processing which can take longer
+    // Add unique identifier to prevent caching
+    formData.append('_t', Date.now().toString());
+    
+    // Increase the timeout to 40 seconds for image processing which can take longer
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
+    const timeoutId = setTimeout(() => controller.abort(), 40000); // 40 seconds timeout
     
     try {
-      const response = await fetch('https://serpapi.com/search', {
+      console.log("Making request to Google Lens API");
+      const response = await fetch(`${API_BASE_URL}/search`, {
         method: 'POST',
         body: formData,
         signal: controller.signal,
-        // Adding cache: 'no-store' to prevent caching issues
+        headers: {
+          // Do not set Content-Type here as it's automatically set for FormData
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
         cache: 'no-store',
+        mode: 'cors',
       });
       
       clearTimeout(timeoutId);
       
       if (!response.ok) {
-        console.error(`API error: ${response.status} ${response.statusText}`);
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`Google Lens API error: ${response.status} ${response.statusText}`, errorText);
+        throw new Error(`API error (${response.status}): ${errorText || response.statusText}`);
       }
       
       const data: LensApiResponse = await response.json();
@@ -254,9 +280,11 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
       
       // Extract product name from the exact matches
       if (data.exact_matches && data.exact_matches.length > 0) {
+        console.log("Found exact match:", data.exact_matches[0].title);
         // Use the title of the first exact match as the search query
         return data.exact_matches[0].title;
       } else if (data.visual_matches && data.visual_matches.length > 0) {
+        console.log("Found visual match:", data.visual_matches[0].title);
         // Fallback to visual matches if no exact matches
         return data.visual_matches[0].title;
       }
@@ -279,6 +307,12 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
     if (fileName.includes("harry")) return "Harry Potter book";
     if (fileName.includes("lord")) return "Lord of the Rings book";
     if (fileName.includes("game")) return "Game of Thrones book";
+    if (fileName.includes("book")) return "Bestselling books";
+    if (fileName.includes("phone")) return "Smartphone";
+    if (fileName.includes("laptop")) return "Laptop computer";
+    if (fileName.includes("camera")) return "Digital camera";
+    if (fileName.includes("shoe")) return "Athletic shoes";
+    if (fileName.includes("watch")) return "Wristwatch";
     
     // Default fallback
     return "Unidentified product";

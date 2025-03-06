@@ -40,104 +40,174 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       
       // Handle different search types
       if (data.type === 'image' && data.value instanceof File) {
+        // Show loading toast for image analysis - extended duration
         sonnerToast.loading('Analyzing image with Google Lens...', {
           id: 'image-analysis',
-          duration: 30000, // Increased timeout for image analysis
+          duration: 60000, // Extended timeout for image analysis (1 minute)
         });
         
-        query = await extractSearchQueryFromImage(data.value);
+        console.log('Starting image analysis with file:', data.value.name, 'size:', data.value.size);
         
-        sonnerToast.success('Image analyzed', {
-          id: 'image-analysis',
-          description: `Searching for: ${query}`,
-        });
-      } else if (data.type === 'url' && typeof data.value === 'string') {
-        // For URL, we'll try to extract a meaningful search term
-        const urlParts = data.value.split('/');
-        query = urlParts[urlParts.length - 1]
-          .replace(/[-_]/g, ' ')
-          .replace(/\.(jpg|jpeg|png|gif|webp)$/i, '');
+        try {
+          query = await extractSearchQueryFromImage(data.value);
           
-        if (!query || query.length < 3) {
-          // If we couldn't extract a good query, use a different part of the URL
-          const domainParts = new URL(data.value).hostname.split('.');
-          query = domainParts[0] !== 'www' ? domainParts[0] : data.value;
+          sonnerToast.success('Image analyzed', {
+            id: 'image-analysis',
+            description: `Searching for: ${query}`,
+          });
+        } catch (error) {
+          console.error('Image analysis failed:', error);
+          
+          sonnerToast.error('Image analysis failed', {
+            id: 'image-analysis',
+            description: error instanceof Error ? error.message : 'Failed to analyze image',
+          });
+          
+          // Try to extract a fallback query from the file name
+          const fileName = data.value.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+          query = fileName.length > 3 ? fileName : "Unidentified product";
+          
+          sonnerToast.info('Using filename as search term', {
+            description: `Searching for: ${query}`,
+          });
         }
+      } else if (data.type === 'url' && typeof data.value === 'string') {
+        try {
+          // For URL, extract a meaningful search term
+          // Try to get the last part of the URL path
+          const parsedUrl = new URL(data.value);
+          const pathSegments = parsedUrl.pathname.split('/').filter(segment => segment.length > 0);
+          let extractedQuery = '';
+          
+          if (pathSegments.length > 0) {
+            // Get the last path segment and clean it
+            extractedQuery = pathSegments[pathSegments.length - 1]
+              .replace(/[-_]/g, ' ')
+              .replace(/\.(jpg|jpeg|png|gif|webp)$/i, '');
+          }
+          
+          // If the extracted query is too short, try the domain name
+          if (!extractedQuery || extractedQuery.length < 3) {
+            const domainParts = parsedUrl.hostname.split('.');
+            extractedQuery = domainParts[0] !== 'www' ? domainParts[0] : 'product';
+          }
+          
+          query = extractedQuery;
+        } catch (error) {
+          console.error('URL parsing error:', error);
+          // If URL parsing fails, use the raw URL as query
+          query = data.value.substring(0, 50); // Limit length
+        }
+      }
+      
+      // Validate query
+      if (!query || query.trim().length < 2) {
+        query = "Unidentified product";
       }
       
       setSearchTerm(query);
       
+      // Show loading toast for product search - extended duration
       sonnerToast.loading('Searching for the best value...', {
         id: 'search',
-        duration: 20000, // Increased timeout for search
+        duration: 30000, // Extended timeout for search (30 seconds)
       });
       
       console.log('Starting product search for query:', query);
       
-      // Perform the actual search with improved error handling
-      const response = await searchProducts({ query });
+      // Track the start time for performance monitoring
+      const startTime = performance.now();
       
-      console.log('Search completed, status:', response.search_metadata.status);
-      
-      // Check if we're using mock data
-      if (response.search_metadata.status === 'Success (Mock)') {
-        setIsMockData(true);
-        sonnerToast.info('Using demo data', {
-          id: 'search',
-          description: 'Due to API limitations, we\'re showing sample results',
-        });
-      } else {
-        sonnerToast.success('Search completed', {
-          id: 'search',
-          description: `Found ${response.shopping_results.length} results`,
-        });
-      }
-      
-      if (response.shopping_results && response.shopping_results.length > 0) {
-        setSearchResults(response.shopping_results);
+      try {
+        // Perform the actual search with improved error handling
+        const response = await searchProducts({ query });
         
-        // Add to search history
-        if (query) {
-          addToSearchHistory(query, data.type);
+        const endTime = performance.now();
+        console.log(`Search completed in ${(endTime - startTime).toFixed(0)}ms, status:`, response.search_metadata.status);
+        
+        // Check if we're using mock data
+        if (response.search_metadata.status === 'Success (Mock)') {
+          setIsMockData(true);
+          sonnerToast.info('Using demo data', {
+            id: 'search',
+            description: 'Due to API limitations, we\'re showing sample results',
+          });
+        } else {
+          sonnerToast.success('Search completed', {
+            id: 'search',
+            description: `Found ${response.shopping_results.length} results`,
+          });
         }
         
-        navigate('/results');
-      } else {
-        sonnerToast.error('No results found', {
+        if (response.shopping_results && response.shopping_results.length > 0) {
+          setSearchResults(response.shopping_results);
+          
+          // Add to search history
+          if (query) {
+            addToSearchHistory(query, data.type);
+          }
+          
+          navigate('/results');
+        } else {
+          sonnerToast.error('No results found', {
+            id: 'search',
+            description: 'Please try a different search query',
+          });
+          
+          toast({
+            title: "No Results",
+            description: "We couldn't find any products matching your search.",
+            variant: "destructive"
+          });
+          
+          // Fallback to mock data
+          const mockResponse = await searchProducts({ 
+            query: "popular products"
+          });
+          
+          setIsMockData(true);
+          setSearchResults(mockResponse.shopping_results);
+          navigate('/results');
+        }
+      } catch (error) {
+        console.error('Product search error:', error);
+        
+        sonnerToast.error('Search failed', {
           id: 'search',
-          description: 'Please try a different search query',
+          description: error instanceof Error ? error.message : 'An unexpected error occurred',
         });
         
         toast({
-          title: "No Results",
-          description: "We couldn't find any products matching your search.",
+          title: "Search Failed",
+          description: "We encountered an error. Showing sample results instead.",
           variant: "destructive"
         });
+        
+        // Set mock data if real search failed
+        setIsMockData(true);
+        const mockResponse = await searchProducts({ 
+          query: typeof data.value === 'string' ? data.value.substring(0, 50) : 'sample product'
+        });
+        
+        if (mockResponse.shopping_results && mockResponse.shopping_results.length > 0) {
+          setSearchResults(mockResponse.shopping_results);
+          navigate('/results');
+        }
       }
+      
     } catch (error) {
-      console.error('Search error:', error);
+      console.error('Overall search process error:', error);
       
-      sonnerToast.error('Search failed', {
-        id: 'search',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+      sonnerToast.error('Search process failed', {
+        description: 'An unexpected error occurred. Showing sample results instead.',
       });
       
-      toast({
-        title: "Search Failed",
-        description: "We encountered an error. Please try again with a different search.",
-        variant: "destructive"
-      });
-      
-      // Set mock data if real search failed
+      // Final fallback
       setIsMockData(true);
-      const mockResponse = await searchProducts({ 
-        query: typeof data.value === 'string' ? data.value : 'sample product'
-      });
+      const mockResponse = await searchProducts({ query: 'popular products' });
+      setSearchResults(mockResponse.shopping_results);
+      navigate('/results');
       
-      if (mockResponse.shopping_results && mockResponse.shopping_results.length > 0) {
-        setSearchResults(mockResponse.shopping_results);
-        navigate('/results');
-      }
     } finally {
       setIsSearching(false);
     }
