@@ -1,5 +1,5 @@
 
-import { API_KEY, API_BASE_URL, createTimeout, getRequestOptions } from './apiConfig';
+import { API_KEY, API_BASE_URL, createTimeout, getLensApiParams } from './apiConfig';
 import { LensApiResponse } from './types';
 
 export const extractSearchQueryFromImage = async (imageFile: File): Promise<string> => {
@@ -9,8 +9,16 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
     // Create form data to send the image file
     const formData = new FormData();
     formData.append('api_key', API_KEY);
-    formData.append('engine', 'google_lens_exact_matches');  // Using exact_matches for more precise identification
+    formData.append('engine', 'google_lens_exact_matches');
     formData.append('image_file', imageFile);
+    
+    // Add lens-specific parameters
+    const lensParams = getLensApiParams();
+    Object.entries(lensParams).forEach(([key, value]) => {
+      if (key !== 'engine') { // Skip engine as we already set it
+        formData.append(key, value);
+      }
+    });
     
     // Add unique identifier to prevent caching
     formData.append('_t', Date.now().toString());
@@ -19,7 +27,7 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
     const timeout = createTimeout(40000); // 40 seconds timeout
     
     try {
-      console.log("Making request to Google Lens API");
+      console.log("Making request to Google Lens API with engine: google_lens_exact_matches");
       const response = await fetch(`${API_BASE_URL}/search`, {
         method: 'POST',
         body: formData,

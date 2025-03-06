@@ -1,3 +1,4 @@
+
 // Shared configuration and utilities for API services
 
 // This should ideally be stored in environment variables
@@ -120,6 +121,15 @@ export const getBookSearchParams = (query: string): Record<string, string> => {
     'hl': 'en',
     'tbm': 'shop',
     'tbs': 'vw:l,mr:1,pdtr0:936965|936966', // Filter for books
+  };
+};
+
+// Google Lens API parameters
+export const getLensApiParams = (): Record<string, string> => {
+  return {
+    'engine': 'google_lens_exact_matches',
+    'gl': 'us',
+    'hl': 'en',
   };
 };
 

@@ -43,6 +43,12 @@ export interface ExactMatch {
   link: string;
   thumbnail: string;
   source: string;
+  price?: string;
+  extracted_price?: number;
+  delivery?: string;
+  rating?: number;
+  reviews?: number;
+  extensions?: string[];
 }
 
 export interface LensApiResponse {
@@ -61,12 +67,12 @@ export interface LensApiResponse {
 export interface SearchOptions {
   query: string;
   limit?: number;
-  isBook?: boolean;  // New flag to indicate if search is for a book
+  isBook?: boolean;
 }
 
 // Book-specific types for improved detection
 export interface BookIdentifier {
   title: string;
   author?: string;
-  confidence: 'high' | 'medium' | 'low';  // Confidence level in the identification
+  confidence: 'high' | 'medium' | 'low';
 }
