@@ -22,6 +22,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, className, isBestVal
   const { addToWishlist, isInWishlist } = useWishlist();
   const inWishlist = isInWishlist(product.id);
   
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Prevent any parent elements from capturing the click
+    e.stopPropagation();
+    // Let the default behavior happen (follow the link)
+    // The link will open in a new tab due to target="_blank"
+    console.log("Link clicked for:", product.link);
+  };
+  
   return (
     <div 
       className={cn(
@@ -70,21 +78,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, className, isBestVal
         <div className="mt-auto flex items-center justify-between">
           <span className="text-base font-semibold">${product.price.toFixed(2)}</span>
           
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-7 px-2 text-xs font-medium hover:text-primary"
-            asChild
+          <a 
+            href={product.link} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center h-7 px-2 text-xs font-medium hover:text-primary rounded transition-colors"
+            onClick={handleLinkClick}
           >
-            <a 
-              href={product.link} 
-              target="_blank" 
-              rel="noopener noreferrer"
-            >
-              View
-              <ArrowRight size={12} className="ml-1" />
-            </a>
-          </Button>
+            View
+            <ArrowRight size={12} className="ml-1" />
+          </a>
         </div>
       </div>
     </div>

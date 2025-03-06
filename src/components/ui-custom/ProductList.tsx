@@ -18,7 +18,7 @@ const ProductList = ({ products, isSearching }: ProductListProps) => {
       storeName: item.source,
       price: item.extracted_price,
       imageUrl: item.thumbnail,
-      link: item.link
+      link: item.link // Ensure this property contains the correct URL
     }));
   };
 
