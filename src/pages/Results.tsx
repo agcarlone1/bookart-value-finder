@@ -26,7 +26,7 @@ const Results = () => {
     ? Math.max(...products.map(p => p.extracted_price)) 
     : 0;
     
-  const priceSpread = highestPrice - lowestPrice;
+  const profitPotential = highestPrice - lowestPrice;
   
   // Calculate average price
   const averagePrice = products.length
@@ -35,7 +35,7 @@ const Results = () => {
   
   // Calculate a simple resale potential score (0-100)
   const resalePotentialScore = products.length && lowestPrice > 0
-    ? Math.min(100, Math.round((priceSpread / lowestPrice) * 100))
+    ? Math.min(100, Math.round((profitPotential / lowestPrice) * 100))
     : 0;
     
   const renderSkeletons = () => (
@@ -130,8 +130,8 @@ const Results = () => {
             {/* Insights Tab */}
             <div>
               {isSearching ? (
-                <div className="grid md:grid-cols-4 gap-4">
-                  {[1, 2, 3, 4].map((i) => (
+                <div className="grid md:grid-cols-5 gap-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
                     <div key={i} className="rounded-xl border bg-white p-4 animate-pulse">
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-lg bg-secondary"></div>
@@ -147,37 +147,49 @@ const Results = () => {
               ) : (
                 <>
                   {products.length > 0 ? (
-                    <>
-                      <div className="grid md:grid-cols-4 gap-4 animate-slide-up">
-                        <InsightCard 
-                          type="average-price" 
-                          value={averagePrice}
-                        />
+                    <div className="flex flex-col space-y-6">
+                      <div className="grid md:grid-cols-5 gap-4 animate-slide-up">
                         <InsightCard 
                           type="highest-price" 
                           value={highestPrice}
                         />
                         <InsightCard 
-                          type="price-spread" 
-                          value={priceSpread}
+                          type="lowest-price" 
+                          value={lowestPrice}
                         />
                         <InsightCard 
-                          type="resale-potential" 
-                          value={`${resalePotentialScore}/100`}
+                          type="average-price" 
+                          value={averagePrice}
+                        />
+                        <InsightCard 
+                          type="profit" 
+                          value={profitPotential}
+                        />
+                        <InsightCard 
+                          type="listing-count" 
+                          value={products.length}
                         />
                       </div>
                       
-                      <div className="mt-8 p-4 rounded-lg bg-secondary/30 border">
-                        <h3 className="font-medium mb-2">What This Means</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Based on our analysis, this item has a 
-                          {resalePotentialScore < 30 ? ' low' : resalePotentialScore < 70 ? ' moderate' : ' high'} 
-                          resale potential. The average price is ${averagePrice.toFixed(2)}, while the price spread indicates 
-                          {priceSpread < 50 ? ' limited' : ' significant'} 
-                          arbitrage opportunities across different marketplaces.
-                        </p>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-lg bg-secondary/30 border">
+                          <h3 className="font-medium mb-2">What This Means</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Based on our analysis, this item has a 
+                            {resalePotentialScore < 30 ? ' low' : resalePotentialScore < 70 ? ' moderate' : ' high'} 
+                            resale potential. The average price is ${averagePrice.toFixed(2)}, while the potential profit of ${profitPotential.toFixed(2)} indicates 
+                            {profitPotential < 50 ? ' limited' : ' significant'} 
+                            arbitrage opportunities across different marketplaces.
+                          </p>
+                        </div>
+                        
+                        <InsightCard 
+                          type="resale-potential" 
+                          value={`${resalePotentialScore}/100`}
+                          className="h-full"
+                        />
                       </div>
-                    </>
+                    </div>
                   ) : (
                     <div className="py-12 text-center text-muted-foreground">
                       <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />

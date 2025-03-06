@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Gem, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Sigma, ListOrdered, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InsightCardProps {
-  type: 'highest-price' | 'price-spread' | 'resale-potential' | 'average-price';
+  type: 'highest-price' | 'lowest-price' | 'profit' | 'average-price' | 'listing-count' | 'resale-potential';
   value: number | string;
   className?: string;
 }
@@ -14,12 +14,16 @@ const InsightCard: React.FC<InsightCardProps> = ({ type, value, className }) => 
     switch (type) {
       case 'highest-price':
         return <TrendingUp className="h-5 w-5 text-amber-500" />;
-      case 'price-spread':
-        return <DollarSign className="h-5 w-5 text-emerald-500" />;
-      case 'resale-potential':
-        return <Gem className="h-5 w-5 text-primary" />;
+      case 'lowest-price':
+        return <TrendingDown className="h-5 w-5 text-emerald-500" />;
+      case 'profit':
+        return <DollarSign className="h-5 w-5 text-green-500" />;
       case 'average-price':
-        return <BarChart3 className="h-5 w-5 text-blue-500" />;
+        return <Sigma className="h-5 w-5 text-blue-500" />;
+      case 'listing-count':
+        return <ListOrdered className="h-5 w-5 text-purple-500" />;
+      case 'resale-potential':
+        return <Star className="h-5 w-5 text-primary" />;
       default:
         return null;
     }
@@ -28,13 +32,17 @@ const InsightCard: React.FC<InsightCardProps> = ({ type, value, className }) => 
   const renderTitle = () => {
     switch (type) {
       case 'highest-price':
-        return 'Highest Price Found';
-      case 'price-spread':
-        return 'Price Spread';
-      case 'resale-potential':
-        return 'Resale Potential Score';
+        return 'Highest Price';
+      case 'lowest-price':
+        return 'Lowest Price';
+      case 'profit':
+        return 'Profit Potential';
       case 'average-price':
         return 'Average Price';
+      case 'listing-count':
+        return '# of Listings';
+      case 'resale-potential':
+        return 'Resale Potential Score';
       default:
         return '';
     }
@@ -44,12 +52,16 @@ const InsightCard: React.FC<InsightCardProps> = ({ type, value, className }) => 
     switch (type) {
       case 'highest-price':
         return 'The highest price available for this item';
-      case 'price-spread':
-        return 'Difference between highest and lowest price';
-      case 'resale-potential':
-        return 'Estimated profit potential based on price distribution';
+      case 'lowest-price':
+        return 'The lowest price available for this item';
+      case 'profit':
+        return 'Potential profit (Highest Price - Lowest Price)';
       case 'average-price':
         return 'Mean price across all available listings';
+      case 'listing-count':
+        return 'Total number of listings found for this item';
+      case 'resale-potential':
+        return 'Estimated profit potential based on price distribution';
       default:
         return '';
     }
@@ -58,6 +70,9 @@ const InsightCard: React.FC<InsightCardProps> = ({ type, value, className }) => 
   const formatValue = () => {
     if (type === 'resale-potential') {
       // If it's a score, return as is
+      return value;
+    } else if (type === 'listing-count') {
+      // For listing count, return as a number
       return value;
     }
     // For price values, format as currency
