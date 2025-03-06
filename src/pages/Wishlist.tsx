@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SignedIn, SignedOut, useUser } from '@clerk/clerk-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/ui-custom/ProductCard';
 import TabView from '@/components/ui-custom/TabView';
-import { ArrowLeft, Heart, History, Trash2, LogIn } from 'lucide-react';
+import { ArrowLeft, Heart, History, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useWishlist, SearchHistoryItem } from '@/contexts/WishlistContext';
 import { useSearch } from '@/contexts/SearchContext';
@@ -26,7 +25,6 @@ const Wishlist = () => {
   const navigate = useNavigate();
   const { wishlistItems, searchHistory, clearWishlist, clearSearchHistory, removeFromWishlist } = useWishlist();
   const { performSearch } = useSearch();
-  const { user } = useUser();
   const [clearWishlistDialogOpen, setClearWishlistDialogOpen] = useState(false);
   const [clearHistoryDialogOpen, setClearHistoryDialogOpen] = useState(false);
   
@@ -72,47 +70,6 @@ const Wishlist = () => {
               Save products and easily access your previous searches
             </p>
           </div>
-          
-          <SignedIn>
-            <div className="mb-4 bg-muted/30 p-3 rounded-lg border">
-              <div className="flex items-center gap-2">
-                <div className="flex-shrink-0">
-                  {user?.imageUrl ? (
-                    <img 
-                      src={user.imageUrl} 
-                      alt={user.username || 'User'} 
-                      className="h-10 w-10 rounded-full"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-primary text-white flex items-center justify-center">
-                      {user?.firstName?.[0] || user?.username?.[0] || 'U'}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium">{user?.username || user?.firstName || 'Your account'}</p>
-                  <p className="text-xs text-muted-foreground">Your wishlist is now synced with your account</p>
-                </div>
-              </div>
-            </div>
-          </SignedIn>
-          
-          <SignedOut>
-            <div className="mb-4 bg-muted/30 p-4 rounded-lg border">
-              <p className="text-sm text-muted-foreground mb-2">
-                Sign in to sync your wishlist across all your devices
-              </p>
-              <div className="flex gap-2">
-                <Button onClick={() => navigate('/signin')} size="sm">
-                  <LogIn size={16} className="mr-1" />
-                  Sign In
-                </Button>
-                <Button variant="outline" onClick={() => navigate('/signup')} size="sm">
-                  Create Account
-                </Button>
-              </div>
-            </div>
-          </SignedOut>
           
           <TabView tabs={["Saved Items", "Search History"]}>
             {/* Saved Items Tab */}

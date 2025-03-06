@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
-import { useUser, useAuth } from '@clerk/clerk-react';
 
 // Define types for our wishlist items
 export interface WishlistItem {
@@ -40,43 +39,29 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const { toast } = useToast();
-  const { isSignedIn, userId } = useAuth();
-  const { user } = useUser();
 
-  // Generate storage keys based on user ID if signed in
-  const getWishlistKey = () => isSignedIn ? `wishlist-${userId}` : 'wishlist';
-  const getSearchHistoryKey = () => isSignedIn ? `searchHistory-${userId}` : 'searchHistory';
-
-  // Load wishlist from localStorage on initial render and when user authentication changes
+  // Load wishlist from localStorage on initial render
   useEffect(() => {
-    const savedWishlist = localStorage.getItem(getWishlistKey());
+    const savedWishlist = localStorage.getItem('wishlist');
     if (savedWishlist) {
       setWishlistItems(JSON.parse(savedWishlist));
-    } else {
-      setWishlistItems([]);
     }
     
-    const savedSearchHistory = localStorage.getItem(getSearchHistoryKey());
+    const savedSearchHistory = localStorage.getItem('searchHistory');
     if (savedSearchHistory) {
       setSearchHistory(JSON.parse(savedSearchHistory));
-    } else {
-      setSearchHistory([]);
     }
-  }, [isSignedIn, userId]);
+  }, []);
 
   // Save wishlist to localStorage whenever it changes
   useEffect(() => {
-    if (wishlistItems.length > 0 || localStorage.getItem(getWishlistKey())) {
-      localStorage.setItem(getWishlistKey(), JSON.stringify(wishlistItems));
-    }
-  }, [wishlistItems, isSignedIn, userId]);
+    localStorage.setItem('wishlist', JSON.stringify(wishlistItems));
+  }, [wishlistItems]);
 
   // Save search history to localStorage whenever it changes
   useEffect(() => {
-    if (searchHistory.length > 0 || localStorage.getItem(getSearchHistoryKey())) {
-      localStorage.setItem(getSearchHistoryKey(), JSON.stringify(searchHistory));
-    }
-  }, [searchHistory, isSignedIn, userId]);
+    localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+  }, [searchHistory]);
 
   // Add a product to the wishlist
   const addToWishlist = (product: any) => {
@@ -128,7 +113,6 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
   // Clear the entire wishlist
   const clearWishlist = () => {
     setWishlistItems([]);
-    localStorage.removeItem(getWishlistKey());
     toast({
       title: "Wishlist Cleared",
       description: "All items have been removed from your wishlist."
@@ -138,7 +122,6 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
   // Clear search history
   const clearSearchHistory = () => {
     setSearchHistory([]);
-    localStorage.removeItem(getSearchHistoryKey());
     toast({
       title: "Search History Cleared",
       description: "Your search history has been cleared."
