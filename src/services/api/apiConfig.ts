@@ -5,8 +5,15 @@
 // But this is a publishable key for SerpAPI that can be safely included in the code
 export const API_KEY = '4bce77d816528a3073a7ff2607e3cb2b3ff477cfc43bc5bbca830353830ab7f6';
 
-// Use production API endpoint
+// API endpoints with proxy option
 export const API_BASE_URL = 'https://serpapi.com';
+export const PROXY_ENABLED = true; // Toggle this to use proxy
+export const PROXY_URL = 'https://corsproxy.io/?'; // CORS proxy service
+
+// Get the final URL based on proxy settings
+export const getApiUrl = (url: string): string => {
+  return PROXY_ENABLED ? `${PROXY_URL}${encodeURIComponent(url)}` : url;
+};
 
 // Common request configuration
 export const getRequestOptions = (signal: AbortSignal) => ({

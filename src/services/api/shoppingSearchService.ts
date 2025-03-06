@@ -1,5 +1,4 @@
-
-import { API_KEY, API_BASE_URL, createTimeout, getRequestOptions } from './apiConfig';
+import { API_KEY, API_BASE_URL, createTimeout, getRequestOptions, getApiUrl } from './apiConfig';
 import { SerpApiResponse, SearchOptions } from './types';
 
 export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Promise<SerpApiResponse> => {
@@ -17,11 +16,15 @@ export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Prom
     // Add timestamp to prevent caching
     url.searchParams.append('_t', Date.now().toString());
     
-    // Increase the timeout to 20 seconds for production environment
-    const timeout = createTimeout(20000); // 20 seconds timeout
+    // Get the final URL with proxy if enabled
+    const finalUrl = getApiUrl(url.toString());
+    console.log('Using URL:', finalUrl);
+    
+    // Increase the timeout to 30 seconds for production environment
+    const timeout = createTimeout(30000); // 30 seconds timeout
     
     try {
-      const response = await fetch(url.toString(), {
+      const response = await fetch(finalUrl, {
         ...getRequestOptions(timeout.signal)
       });
       
@@ -63,10 +66,27 @@ export const searchProducts = async ({ query, limit = 10 }: SearchOptions): Prom
   } catch (error) {
     console.error("Error fetching from SerpAPI:", error);
     
-    // For network errors, provide mock data for testing
-    return getMockData(query, error instanceof Error ? error.message : 'Unknown error');
+    // Check if we should return mock data
+    if (shouldReturnMockData(error)) {
+      return getMockData(query, error instanceof Error ? error.message : 'Unknown error');
+    }
+    
+    // Otherwise, throw the error
+    throw error;
   }
 };
+
+// Function to determine if mock data should be returned
+function shouldReturnMockData(error: unknown): boolean {
+  if (error instanceof Error) {
+    // Check for common network errors that suggest we should use mock data
+    return error.message.includes('Failed to fetch') || 
+           error.message.includes('Network Error') ||
+           error.message.includes('CORS') ||
+           error.message.includes('AbortError');
+  }
+  return true; // Default to mock data for unknown errors
+}
 
 // Mock data for testing or when API fails
 export function getMockData(query: string, errorMessage: string): SerpApiResponse {

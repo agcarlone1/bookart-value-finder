@@ -1,15 +1,17 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { RotateCw, CheckCircle2, XCircle } from 'lucide-react';
+import { RotateCw, CheckCircle2, XCircle, Info } from 'lucide-react';
 import { searchProducts } from '@/services/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PROXY_ENABLED } from '@/services/api/apiConfig';
 
 const ApiTestButton = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [response, setResponse] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [networkDetails, setNetworkDetails] = useState<string | null>(null);
 
   const testApi = async () => {
     try {
@@ -17,6 +19,7 @@ const ApiTestButton = () => {
       setStatus('idle');
       setResponse(null);
       setErrorMessage(null);
+      setNetworkDetails(null);
       
       // Use a simple, reliable search term
       const testQuery = 'apple iphone';
@@ -30,6 +33,7 @@ const ApiTestButton = () => {
       if (result.search_metadata.status === 'Success (Mock)') {
         setStatus('error');
         setErrorMessage('Received mock data instead of real API data');
+        setNetworkDetails(`Using CORS proxy: ${PROXY_ENABLED ? 'Yes' : 'No'}`);
       } else {
         setStatus('success');
       }
@@ -41,6 +45,7 @@ const ApiTestButton = () => {
       console.error('API test failed:', error);
       setStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
+      setNetworkDetails(`Using CORS proxy: ${PROXY_ENABLED ? 'Yes' : 'No'}`);
     } finally {
       setIsLoading(false);
     }
@@ -79,6 +84,11 @@ const ApiTestButton = () => {
           <XCircle className="h-4 w-4 text-red-600" />
           <AlertDescription>
             API connection failed: {errorMessage}
+            {networkDetails && (
+              <div className="mt-2 text-xs">
+                <Info className="h-3 w-3 inline mr-1" /> {networkDetails}
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       )}
