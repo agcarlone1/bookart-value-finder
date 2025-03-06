@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { RotateCw, CheckCircle2, XCircle, Info, Save } from 'lucide-react';
@@ -9,7 +8,7 @@ import {
   CORS_PROXIES, 
   getCurrentProxy, 
   saveCurrentProxy,
-  USE_MOCK_DATA_ONLY,
+  USE_MOCK_DATA,
   IS_DEVELOPMENT
 } from '@/services/api/apiConfig';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -59,8 +58,7 @@ const ApiTestButton = () => {
       
       const result = await searchProducts({ 
         query: testQuery, 
-        limit: 3,
-        _proxyUrl: useProxyUrl // Pass the proxy URL to the search function
+        limit: 3
       });
       
       console.log('API test result:', result);
