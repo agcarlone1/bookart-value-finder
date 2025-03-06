@@ -11,6 +11,7 @@ import ProxySelector from './ApiTest/ProxySelector';
 import MockDataToggle from './ApiTest/MockDataToggle';
 import TestApiButton from './ApiTest/TestApiButton';
 import TestResultDisplay from './ApiTest/TestResultDisplay';
+import EndpointCheck from './ApiTest/EndpointCheck';
 
 const ApiTestButton = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -104,6 +105,8 @@ const ApiTestButton = () => {
   return (
     <div className="space-y-4 p-4 border rounded-lg">
       <h3 className="font-medium text-lg">API Connection Test</h3>
+      
+      <EndpointCheck />
       
       <div className="space-y-4">
         <ProxySelector 

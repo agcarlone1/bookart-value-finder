@@ -17,6 +17,16 @@ export const fetchImageSearchResults = async (
     console.log('Sending request to backend API:', endpoint);
     console.log('Request payload:', { imageUrl: imageUrl.substring(0, 50) + '...' });
     
+    // Add a direct fetch test to verify endpoint is reachable
+    try {
+      const testResponse = await fetch(endpoint, {
+        method: 'HEAD',
+      });
+      console.log(`Endpoint test: ${endpoint} is ${testResponse.ok ? 'reachable' : 'not reachable'} (status: ${testResponse.status})`);
+    } catch (testError) {
+      console.error(`Endpoint test failed for ${endpoint}:`, testError);
+    }
+    
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -53,19 +63,33 @@ export const fetchImageSearchResults = async (
       }
       
       console.error('API error response:', errorMessage);
+      
+      if (response.status === 404) {
+        throw new Error(`Endpoint ${endpoint} not found (404). Please make sure your backend server is running and the route is correctly defined.`);
+      }
+      
       throw new Error(errorMessage);
     }
 
     // Check if the response has content before parsing
     const contentType = response.headers.get('content-type');
+    console.log('Response content type:', contentType);
+    
+    // Always log the raw response first for debugging
+    const rawText = await response.text();
+    console.log('Raw successful response:', rawText.substring(0, 200) + (rawText.length > 200 ? '...' : ''));
+    
+    if (!rawText || rawText.trim() === '') {
+      throw new Error('API returned an empty response');
+    }
+    
     if (!contentType || !contentType.includes('application/json')) {
-      const rawText = await response.text();
       console.log('Unexpected response format:', rawText);
       throw new Error('API response is not JSON');
     }
     
     // Now we can safely parse the JSON
-    const data = await response.json();
+    const data = JSON.parse(rawText);
     console.log('API response received successfully', { 
       metadata: data.search_metadata,
       exactMatchesCount: data.exact_matches?.length || 0 

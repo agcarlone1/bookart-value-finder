@@ -22,6 +22,8 @@ export const fetchGoogleLensResults = async (imageUrl: string): Promise<LensApiR
       hl: 'en'
     });
     
+    console.log('Server: Full SERPAPI URL:', url.toString().replace(API_KEY, 'API_KEY_REDACTED'));
+    
     // Make the request from the server side
     const response = await fetch(url.toString(), {
       method: 'GET',
@@ -33,9 +35,12 @@ export const fetchGoogleLensResults = async (imageUrl: string): Promise<LensApiR
     
     console.log('Server: SERPAPI response status:', response.status, response.statusText);
     
+    // Always log the raw response first for debugging
+    const rawResponse = await response.text();
+    console.log('Server: SERPAPI raw response (first 200 chars):', 
+      rawResponse.substring(0, 200) + (rawResponse.length > 200 ? '...' : ''));
+    
     if (!response.ok) {
-      // Get the raw response text for better error reporting
-      const rawResponse = await response.text();
       console.error('Server: SERPAPI request failed. Raw response:', rawResponse);
       
       let errorMessage = `SERPAPI request failed: ${response.status}`;
@@ -57,15 +62,20 @@ export const fetchGoogleLensResults = async (imageUrl: string): Promise<LensApiR
       throw new Error(errorMessage);
     }
     
-    // Check if there's content and it's JSON
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const rawText = await response.text();
-      console.log('Server: Unexpected response format:', rawText);
-      throw new Error('SERPAPI response is not JSON');
+    // Check if there's content
+    if (!rawResponse || rawResponse.trim() === '') {
+      throw new Error('SERPAPI returned an empty response');
     }
     
-    const data = await response.json();
+    // Now parse as JSON
+    let data;
+    try {
+      data = JSON.parse(rawResponse);
+    } catch (parseError) {
+      console.error('Server: Failed to parse SERPAPI response as JSON:', parseError);
+      throw new Error(`Invalid JSON response from SERPAPI: ${rawResponse.substring(0, 100)}...`);
+    }
+    
     console.log('Server: SERPAPI response received successfully', {
       id: data.search_metadata?.id,
       status: data.search_metadata?.status,
@@ -101,6 +111,9 @@ export const fetchGoogleLensResults = async (imageUrl: string): Promise<LensApiR
 export const handleGoogleLensRequest = async (req, res) => {
   try {
     console.log('Server: Lens API request received');
+    console.log('Server: Request headers:', req.headers);
+    console.log('Server: Request body:', req.body);
+    
     const { imageUrl } = req.body;
     
     if (!imageUrl) {
