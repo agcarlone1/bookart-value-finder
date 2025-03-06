@@ -44,6 +44,7 @@ export interface SerpApiResponse {
 
 // Google Lens API types
 export interface ProductMatch {
+  position?: number; // Added position property since it's being used
   title: string;
   link: string;
   thumbnail: string;

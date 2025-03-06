@@ -8,6 +8,7 @@ export interface SearchContextType {
   searchResults: ShoppingResult[] | null;
   isSearching: boolean;
   isMockData: boolean;
+  error: string | null;
   performSearch: (searchOptions: { type: SearchType, value: string | File }) => Promise<void>;
   setSearchTerm: (term: string) => void;
   setSearchResults: (results: ShoppingResult[]) => void;
