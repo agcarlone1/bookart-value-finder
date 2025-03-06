@@ -1,6 +1,7 @@
 
 import { GoogleLensRequest, LensApiResponse } from './types';
 
+// Get the API URL from environment variables or use a fallback
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 /**
@@ -11,6 +12,9 @@ export const fetchImageSearchResults = async (
   imageUrl: string
 ): Promise<LensApiResponse> => {
   try {
+    console.log('Sending request to backend API:', `${API_URL}/google-lens`);
+    console.log('Request payload:', { imageUrl: imageUrl.substring(0, 50) + '...' });
+    
     const response = await fetch(`${API_URL}/google-lens`, {
       method: 'POST',
       headers: {
@@ -19,12 +23,21 @@ export const fetchImageSearchResults = async (
       body: JSON.stringify({ imageUrl }),
     });
 
+    console.log('Response status:', response.status, response.statusText);
+    
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch search results');
+      console.error('API error response:', errorData);
+      throw new Error(errorData.message || `Failed to fetch search results (${response.status})`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('API response received successfully', { 
+      metadata: data.search_metadata,
+      exactMatchesCount: data.exact_matches?.length || 0 
+    });
+    
+    return data;
   } catch (error) {
     console.error('Error in client-side image search:', error);
     return {

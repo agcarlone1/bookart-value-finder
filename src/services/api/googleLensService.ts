@@ -14,6 +14,14 @@ export const fetchGoogleLensResults = async (imageUrl: string): Promise<LensApiR
     url.searchParams.append('gl', 'us');
     url.searchParams.append('hl', 'en');
     
+    console.log('Server: Making request to SERPAPI with params:', {
+      engine: 'google_lens_exact_matches',
+      url: imageUrl.substring(0, 50) + '...',
+      api_key: API_KEY.substring(0, 5) + '...',
+      gl: 'us',
+      hl: 'en'
+    });
+    
     // Make the request from the server side
     const response = await fetch(url.toString(), {
       method: 'GET',
@@ -23,14 +31,24 @@ export const fetchGoogleLensResults = async (imageUrl: string): Promise<LensApiR
       },
     });
     
+    console.log('Server: SERPAPI response status:', response.status, response.statusText);
+    
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('Server: SERPAPI request failed:', response.status, errorText);
       throw new Error(`SERPAPI request failed: ${response.status} ${errorText}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('Server: SERPAPI response received successfully', {
+      id: data.search_metadata?.id,
+      status: data.search_metadata?.status,
+      exactMatchesCount: data.exact_matches?.length || 0
+    });
+    
+    return data;
   } catch (error) {
-    console.error('Error fetching Google Lens results:', error);
+    console.error('Server: Error fetching Google Lens results:', error);
     
     // Return user-friendly error
     return {
@@ -56,27 +74,34 @@ export const fetchGoogleLensResults = async (imageUrl: string): Promise<LensApiR
 // This would be implemented in your backend server code
 export const handleGoogleLensRequest = async (req: any, res: any) => {
   try {
+    console.log('Server: Lens API request received');
     const { imageUrl } = req.body;
     
     if (!imageUrl) {
+      console.error('Server: Missing imageUrl in request body');
       return res.status(400).json({ 
         error: 'Missing imageUrl in request body' 
       });
     }
     
+    console.log('Server: Processing Lens API request with imageUrl', 
+      imageUrl.substring(0, 30) + '...');
+    
     const results = await fetchGoogleLensResults(imageUrl);
     
     // If there was an error in the SERPAPI request
     if (results.error) {
+      console.error('Server: Error in SERPAPI response:', results.error);
       return res.status(500).json({ 
         error: results.error,
         message: 'Failed to fetch results from SERPAPI'
       });
     }
     
+    console.log('Server: Successfully processed Lens API request, sending response');
     return res.status(200).json(results);
   } catch (error) {
-    console.error('Error in Google Lens API handler:', error);
+    console.error('Server: Error in Google Lens API handler:', error);
     return res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Unknown error',
       message: 'An unexpected error occurred while processing your request'

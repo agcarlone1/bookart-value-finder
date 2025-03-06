@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { ShoppingResult, SearchOptions } from '@/services/api/types';
 import { searchProducts } from '@/services/api/shoppingSearchService';
@@ -76,6 +77,7 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
   const handleImageSearch = async (value: File | string): Promise<ShoppingResult[]> => {
     try {
       setIsSearching(true);
+      console.log('Starting image search with value type:', typeof value);
     
       // Get the image URL (either from File or direct URL)
       const imageUrl = typeof value === 'string' 
@@ -85,29 +87,41 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
       if (!imageUrl) {
         throw new Error('Failed to process image');
       }
+      
+      console.log('Image processed successfully, calling API endpoint');
     
-      // Call our server-side API via the client function
+      // Use the client-side function to call our server endpoint
       const response = await fetchImageSearchResults(imageUrl);
+      console.log('API response received:', response);
     
       if (response.error) {
+        console.error('API returned error:', response.error);
         throw new Error(response.error);
       }
     
-      // Process the response data
-      const results = response.exact_matches?.map((match, index) => ({
-        position: index + 1,
-        title: match.title,
-        link: match.link,
-        source: match.source,
-        price: match.price || 'N/A',
-        extracted_price: match.extracted_price || 0,
-        thumbnail: match.thumbnail,
-        delivery: 'Check website',
-        rating: match.rating,
-        reviews: match.reviews
-      })) || [];
-    
-      return results;
+      // Process the response data from the exact_matches field
+      if (response.exact_matches && response.exact_matches.length > 0) {
+        console.log("Found exact matches:", response.exact_matches.length);
+        
+        // Map the exact matches to our ShoppingResult format
+        const results = response.exact_matches.map((match, index) => ({
+          position: index + 1,
+          title: match.title || 'Unknown Product',
+          link: match.link || '#',
+          source: match.source || 'Unknown Source',
+          price: match.price || 'N/A',
+          extracted_price: match.extracted_price || 0,
+          thumbnail: match.thumbnail || '',
+          delivery: match.delivery || 'Check website',
+          rating: match.rating,
+          reviews: match.reviews
+        }));
+        
+        return results;
+      }
+      
+      console.log('No exact matches found in the response');
+      return [];
     } catch (error) {
       console.error('Image search error:', error);
       toast({
@@ -126,6 +140,7 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
     setSearchTerm('');
 
     try {
+      console.log('Performing search with type:', searchOptions.type);
       let results: ShoppingResult[] = [];
 
       if (searchOptions.type === 'text') {
@@ -134,6 +149,7 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
         results = await handleImageSearch(searchOptions.value);
       }
 
+      console.log('Search completed, found results:', results.length);
       setSearchResults(results);
     } catch (error) {
       console.error('Search failed:', error);
