@@ -86,12 +86,12 @@ const InsightCard: React.FC<InsightCardProps> = ({ type, value, className }) => 
         className
       )}
     >
-      <div className="flex items-start gap-2">
-        <div className="flex-shrink-0 p-1.5 rounded-md bg-secondary/50">
+      <div className="flex flex-col items-center gap-2">
+        <div className="p-2 rounded-md bg-secondary/50 mb-1">
           {renderIcon()}
         </div>
         
-        <div className="flex-grow">
+        <div className="w-full text-center">
           <h3 className="text-sm font-medium text-muted-foreground">
             {renderTitle()}
           </h3>
