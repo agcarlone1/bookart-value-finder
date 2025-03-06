@@ -10,6 +10,8 @@ const EndpointCheck = () => {
   const [details, setDetails] = useState<string>('');
   const [rawResponse, setRawResponse] = useState<string>('');
   const [responseStatus, setResponseStatus] = useState<number | null>(null);
+  const [headStatus, setHeadStatus] = useState<number | null>(null);
+  const [postStatus, setPostStatus] = useState<number | null>(null);
   
   // Run the check automatically on component mount
   useEffect(() => {
@@ -23,6 +25,8 @@ const EndpointCheck = () => {
       setDetails('');
       setRawResponse('');
       setResponseStatus(null);
+      setHeadStatus(null);
+      setPostStatus(null);
       
       // Get the API URL from environment variables or use a fallback
       const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -37,7 +41,7 @@ const EndpointCheck = () => {
           method: 'HEAD',
         });
         
-        setResponseStatus(response.status);
+        setHeadStatus(response.status);
         console.log(`HEAD request response status: ${response.status}`);
         
         if (response.status === 404) {
@@ -57,7 +61,7 @@ const EndpointCheck = () => {
             method: 'GET',
           });
           
-          setResponseStatus(response.status);
+          setHeadStatus(response.status);
           console.log(`GET fallback response status: ${response.status}`);
           
           if (!response.ok) {
@@ -81,6 +85,7 @@ const EndpointCheck = () => {
           }),
         });
         
+        setPostStatus(testResponse.status);
         setResponseStatus(testResponse.status);
         console.log(`POST test response status: ${testResponse.status}`);
         
@@ -109,10 +114,19 @@ const EndpointCheck = () => {
         }
       } catch (postError) {
         console.error('POST test request failed:', postError);
-        // We'll still consider the endpoint "accessible" if it exists, even if the POST fails
-        setStatus('success');
-        setMessage(`API endpoint exists but returned an error when tested`);
-        setDetails(`The endpoint ${endpoint} is reachable, but returned an error when tested with a POST request. This may be expected if the endpoint requires specific parameters.`);
+        
+        // Change the logic here: We'll consider it an error if the POST fails
+        setStatus('error');
+        setMessage(`API endpoint exists but POST request failed`);
+        
+        // Generate detailed analysis based on the specific POST status code
+        if (postStatus === 404) {
+          setDetails(`The endpoint ${endpoint} exists (HEAD returned ${headStatus}), but does not handle POST requests (404).\n\nThis indicates the server route is registered but either doesn't have a POST handler implemented or the handler is misconfigured.`);
+        } else if (postStatus === 500) {
+          setDetails(`The endpoint ${endpoint} exists (HEAD returned ${headStatus}), but returned a server error (500) when testing with POST.\n\nThis indicates the route handler has an internal error in the server-side code.`);
+        } else {
+          setDetails(`The endpoint ${endpoint} exists (HEAD returned ${headStatus}), but returned an unexpected status (${postStatus}) when testing with POST.\n\nThis requires investigation in the server-side code.`);
+        }
       }
     } catch (error) {
       setStatus('error');
@@ -120,28 +134,37 @@ const EndpointCheck = () => {
       setMessage(`API endpoint is not accessible: ${errorMessage}`);
       
       // Generate debugging suggestions based on status code
-      let suggestionText = 'Debugging suggestions:\n';
+      let suggestionText = 'Analysis and debugging suggestions:\n\n';
       
       if (responseStatus === 404) {
-        suggestionText += '1. The route /api/google-lens is not registered on your server\n';
-        suggestionText += '2. Check if server/api/google-lens.js exists and is properly configured\n';
-        suggestionText += '3. Ensure your backend framework is properly loading the route\n';
-        suggestionText += '4. Restart your backend server after making changes\n';
+        suggestionText += '• Route Issue: The route /api/google-lens is not registered on your server\n';
+        suggestionText += '• Expected Location: Ensure server/api/google-lens.js exists\n';
+        suggestionText += '• Handler Configuration: Check that the route correctly handles both HEAD and POST methods\n';
+        suggestionText += '• Server Implementation: Request handler might be missing or incorrectly exported\n';
+        suggestionText += '• Server Restart: Restart your backend server after making changes\n';
       } else if (responseStatus === 500) {
-        suggestionText += '1. Server error (500): Check your server logs for details\n';
-        suggestionText += '2. Verify that googleLensService.handleGoogleLensRequest is functioning correctly\n';
-        suggestionText += '3. Ensure your API_KEY is valid in apiConfig.ts\n';
-        suggestionText += '4. Check for any runtime errors in the server logs\n';
+        suggestionText += '• Server Error (500): Check your server logs for detailed error stack traces\n';
+        suggestionText += '• Handler Implementation: Verify that handleGoogleLensRequest is functioning correctly\n';
+        suggestionText += '• API Configuration: Ensure your API_KEY in apiConfig.ts is valid\n';
+        suggestionText += '• Request Format: Confirm the expected JSON structure matches what the server expects\n';
+        suggestionText += '• Runtime Environment: Check for any Node.js dependencies that might be missing\n';
       } else {
-        suggestionText += '1. Check if your backend server is running\n';
-        suggestionText += '2. Verify VITE_API_URL is set correctly (current: ' + (import.meta.env.VITE_API_URL || '/api') + ')\n';
-        suggestionText += '3. Check server logs for errors\n';
-        suggestionText += '4. Ensure server/api/google-lens.js is properly exported\n';
-        suggestionText += '5. If using local dev server, restart it\n';
+        suggestionText += '• Server Status: Verify your backend server is running\n';
+        suggestionText += '• Environment Configuration: Check VITE_API_URL is set correctly (current: ' + (import.meta.env.VITE_API_URL || '/api') + ')\n';
+        suggestionText += '• Server Logs: Review logs for startup errors or route registration issues\n';
+        suggestionText += '• Implementation Check: Confirm server/api/google-lens.js is properly exported and handles the correct HTTP methods\n';
+        suggestionText += '• Development Environment: Restart the local dev server if changes were made\n';
       }
       
       setDetails(suggestionText);
     }
+  };
+  
+  const getStatusSummary = () => {
+    if (headStatus !== null && postStatus !== null) {
+      return `HEAD: ${headStatus} ${headStatus === 200 ? '✓' : '✗'} | POST: ${postStatus} ${postStatus === 200 ? '✓' : '✗'}`;
+    }
+    return '';
   };
   
   return (
@@ -170,6 +193,12 @@ const EndpointCheck = () => {
           'Run Check Again'
         )}
       </Button>
+      
+      {getStatusSummary() && (
+        <div className="text-sm mb-3 font-mono bg-gray-50 p-2 rounded">
+          {getStatusSummary()}
+        </div>
+      )}
       
       {status === 'success' && (
         <Alert className="bg-green-50 border-green-200">
@@ -203,14 +232,15 @@ const EndpointCheck = () => {
               <div className="mt-3">
                 <p className="text-xs font-medium mb-1">Raw Response:</p>
                 <pre className="text-xs mt-1 bg-gray-50 p-2 rounded border max-h-32 overflow-auto">
-                  {rawResponse}
+                  {rawResponse || '(empty response)'}
                 </pre>
               </div>
             )}
             
-            {responseStatus && (
-              <p className="text-xs mt-2">
-                <span className="font-medium">Response Status:</span> {responseStatus}
+            {(headStatus !== null || postStatus !== null) && (
+              <p className="text-xs mt-2 font-mono">
+                {headStatus !== null && <span className="mr-4">HEAD Status: {headStatus}</span>}
+                {postStatus !== null && <span>POST Status: {postStatus}</span>}
               </p>
             )}
           </AlertDescription>
