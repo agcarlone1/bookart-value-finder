@@ -1,4 +1,3 @@
-
 // Shared configuration and utilities for API services
 
 // This should ideally be stored in environment variables

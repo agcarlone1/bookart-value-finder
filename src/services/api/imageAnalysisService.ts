@@ -9,7 +9,7 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
     // Create form data to send the image file
     const formData = new FormData();
     formData.append('api_key', API_KEY);
-    formData.append('engine', 'google_lens');  // Use standard google_lens instead of exact_matches for better general results
+    formData.append('engine', 'google_lens_exact_matches');  // Using exact_matches for more precise identification
     formData.append('image_file', imageFile);
     
     // Add unique identifier to prevent caching
@@ -54,51 +54,57 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
         throw new Error(data.error);
       }
       
-      // First, check for book-specific information in visual matches
-      let query = "";
+      // First, check for book-specific information in exact matches
+      if (data.exact_matches && data.exact_matches.length > 0) {
+        console.log("Found exact matches:", data.exact_matches.length);
+        
+        // Examine exact matches for book indicators
+        for (const match of data.exact_matches) {
+          const title = match.title.toLowerCase();
+          
+          // Check if this is likely a book
+          if (isBookTitle(title)) {
+            console.log("Found book match in exact matches:", match.title);
+            return cleanBookTitle(match.title) + " book";
+          }
+        }
+        
+        // If we didn't find specific book indicators but have exact matches
+        console.log("Using first exact match as search term:", data.exact_matches[0].title);
+        return data.exact_matches[0].title;
+      }
       
       // Look for book indicators in visual matches
-      if (data.visual_matches) {
-        console.log("Analyzing visual matches for book content");
+      if (data.visual_matches && data.visual_matches.length > 0) {
+        console.log("Analyzing visual matches:", data.visual_matches.length);
         
         // First pass: Look specifically for book titles and authors
         for (const match of data.visual_matches) {
           const title = match.title.toLowerCase();
           
           // Check if this looks like a book result
-          if (
-            title.includes("book") || 
-            title.includes("novel") || 
-            title.includes("edition") || 
-            title.includes("hardcover") ||
-            title.includes("paperback") ||
-            title.includes("author") ||
-            title.includes("publishing") ||
-            title.includes("press")
-          ) {
-            console.log("Found likely book match:", match.title);
-            return match.title + " book";
+          if (isBookTitle(title)) {
+            console.log("Found book match in visual matches:", match.title);
+            return cleanBookTitle(match.title) + " book";
           }
         }
         
-        // Second pass: Extract any text visible in the image 
+        // Second pass: Use knowledge graph if available
         if (data.knowledge_graph && data.knowledge_graph.title) {
           console.log("Found knowledge graph title:", data.knowledge_graph.title);
-          return data.knowledge_graph.title + " book";
+          
+          // Check if knowledge graph contains book type
+          if (data.knowledge_graph.type && 
+              (data.knowledge_graph.type.toLowerCase().includes('book') || 
+               data.knowledge_graph.type.toLowerCase().includes('novel'))) {
+            return cleanBookTitle(data.knowledge_graph.title) + " book";
+          }
+          
+          return data.knowledge_graph.title;
         }
-      }
-      
-      // Extract product name from the exact matches
-      if (data.exact_matches && data.exact_matches.length > 0) {
-        console.log("Found exact match:", data.exact_matches[0].title);
-        // Use the title of the first exact match as the search query
-        return data.exact_matches[0].title;
-      } 
-      
-      // Visual matches fallback
-      if (data.visual_matches && data.visual_matches.length > 0) {
-        console.log("Found visual match:", data.visual_matches[0].title);
-        // Fallback to visual matches if no exact matches
+        
+        // Fallback to first visual match
+        console.log("Using first visual match as search term:", data.visual_matches[0].title);
         return data.visual_matches[0].title;
       }
       
@@ -164,3 +170,32 @@ export const extractSearchQueryFromImage = async (imageFile: File): Promise<stri
     return "Richard Prince photography book";
   }
 };
+
+// Helper function to check if a title is likely a book
+function isBookTitle(title: string): boolean {
+  return (
+    title.includes("book") || 
+    title.includes("novel") || 
+    title.includes("edition") ||
+    title.includes("hardcover") ||
+    title.includes("paperback") ||
+    title.includes("author") ||
+    title.includes("publishing") ||
+    title.includes("press") ||
+    title.includes("isbn") ||
+    title.includes("chapter") ||
+    title.includes("trilogy") ||
+    title.includes("collection")
+  );
+}
+
+// Helper function to clean a book title
+function cleanBookTitle(title: string): string {
+  // Remove common suffixes like "Paperback", "Hardcover", etc.
+  return title
+    .replace(/(paperback|hardcover|edition|novel|book)(?:\s*[\-:]\s*|\s+by\s+|\s*$)/i, '')
+    .replace(/\s+\(\w+\s+\d{4}\)/, '') // Remove publication dates like (June 2021)
+    .replace(/\s+ISBN\s+[\d\-X]+/i, '') // Remove ISBN references
+    .replace(/\s{2,}/g, ' ') // Replace multiple spaces with a single space
+    .trim();
+}

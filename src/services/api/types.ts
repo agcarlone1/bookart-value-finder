@@ -61,4 +61,12 @@ export interface LensApiResponse {
 export interface SearchOptions {
   query: string;
   limit?: number;
+  isBook?: boolean;  // New flag to indicate if search is for a book
+}
+
+// Book-specific types for improved detection
+export interface BookIdentifier {
+  title: string;
+  author?: string;
+  confidence: 'high' | 'medium' | 'low';  // Confidence level in the identification
 }
