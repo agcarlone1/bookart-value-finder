@@ -26,12 +26,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, className, isBestVal
         className
       )}
     >
-      {isBestValue && (
-        <div className="absolute top-0 left-0 right-0 bg-primary text-xs font-medium text-white text-center py-0.5 px-2 z-10">
-          Best Value
-        </div>
-      )}
-      
       <div className="flex flex-col">
         <div className="relative w-full h-[120px] bg-secondary/10 overflow-hidden">
           <img 
