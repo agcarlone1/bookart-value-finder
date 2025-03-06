@@ -1,3 +1,4 @@
+
 import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
 
@@ -10,6 +11,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      duration={5000} // Added default duration of 5 seconds
+      position="top-right" // Explicitly setting position
+      closeButton={true} // Ensure there's a close button
       toastOptions={{
         classNames: {
           toast:
