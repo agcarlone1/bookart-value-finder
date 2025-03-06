@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ExternalLink, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -21,19 +21,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, className, isBestVal
   return (
     <div 
       className={cn(
-        'group relative rounded-xl overflow-hidden bg-white border transition-all duration-300 hover:shadow-light-md',
+        'group relative rounded-lg overflow-hidden bg-white border transition-all duration-300 hover:shadow-light-md',
         isBestValue ? 'ring-2 ring-primary' : 'ring-0',
         className
       )}
     >
       {isBestValue && (
-        <div className="absolute top-0 left-0 right-0 bg-primary text-xs font-medium text-white text-center py-1 px-2 z-10">
+        <div className="absolute top-0 left-0 right-0 bg-primary text-xs font-medium text-white text-center py-0.5 px-2 z-10">
           Best Value
         </div>
       )}
       
-      <div className="flex md:flex-row flex-col h-full">
-        <div className="relative w-full md:w-1/3 aspect-square md:aspect-auto flex-shrink-0 bg-secondary/30 overflow-hidden">
+      <div className="flex h-24 md:h-20">
+        <div className="relative w-24 h-full flex-shrink-0 bg-secondary/20 overflow-hidden">
           <img 
             src={product.imageUrl} 
             alt={product.name}
@@ -42,26 +42,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, className, isBestVal
           />
         </div>
         
-        <div className="flex flex-col p-4 flex-grow">
-          <div className="mb-2">
-            <div className="text-xs font-medium text-muted-foreground mb-1">{product.storeName}</div>
-            <h3 className="font-medium text-foreground line-clamp-2">{product.name}</h3>
+        <div className="flex flex-col py-1.5 px-3 flex-grow">
+          <div className="mb-1">
+            <div className="text-xs text-muted-foreground truncate">{product.storeName}</div>
+            <h3 className="text-sm font-medium text-foreground line-clamp-1">{product.name}</h3>
           </div>
           
-          <div className="mt-auto">
-            <div className="flex items-baseline mb-3">
-              <span className="text-lg font-semibold">${product.price.toFixed(2)}</span>
-            </div>
+          <div className="mt-auto flex items-center justify-between">
+            <span className="text-sm font-semibold">${product.price.toFixed(2)}</span>
             
             <Button 
-              variant="outline" 
+              variant="ghost" 
               size="sm" 
-              className="w-full group-hover:bg-primary group-hover:text-white transition-colors duration-300"
+              className="h-7 px-2 text-xs group-hover:text-primary transition-colors duration-300"
               asChild
             >
               <a href={product.link} target="_blank" rel="noopener noreferrer">
-                <span>View Deal</span>
-                <ArrowRight size={14} className="ml-1" />
+                <span>View</span>
+                <ArrowRight size={12} className="ml-1" />
               </a>
             </Button>
           </div>

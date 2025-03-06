@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -33,16 +32,15 @@ const Results = () => {
     : 0;
     
   const renderSkeletons = () => (
-    <div className="space-y-4">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="rounded-xl border bg-white overflow-hidden animate-pulse">
-          <div className="flex md:flex-row flex-col h-full">
-            <div className="w-full md:w-1/3 aspect-square md:aspect-auto bg-secondary"></div>
-            <div className="p-4 flex-grow space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      {Array.from({ length: 9 }).map((_, i) => (
+        <div key={i} className="rounded-lg border bg-white overflow-hidden animate-pulse h-24 md:h-20">
+          <div className="flex h-full">
+            <div className="w-24 h-full bg-secondary"></div>
+            <div className="p-3 flex-grow space-y-2">
               <div className="h-2 bg-secondary rounded w-1/4"></div>
-              <div className="h-4 bg-secondary rounded w-3/4"></div>
-              <div className="h-4 bg-secondary rounded w-1/2 mt-auto"></div>
-              <div className="h-8 bg-secondary rounded w-full"></div>
+              <div className="h-3 bg-secondary rounded w-3/4"></div>
+              <div className="h-2 bg-secondary rounded w-1/2 mt-auto"></div>
             </div>
           </div>
         </div>
@@ -66,20 +64,20 @@ const Results = () => {
     <div className="flex flex-col min-h-screen">
       <Header />
       
-      <main className="flex-grow py-8 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="mb-8 animate-slide-down">
+      <main className="flex-grow py-6 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="mb-6 animate-slide-down">
             <Button 
               variant="ghost" 
-              className="mb-4 text-sm"
+              className="mb-3 text-sm"
               onClick={() => navigate('/')}
             >
               <ArrowLeft size={16} className="mr-1" />
               Back to Search
             </Button>
             
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">Search Results</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-xl md:text-2xl font-bold mb-1">Search Results</h1>
+            <p className="text-muted-foreground text-sm">
               {searchTerm ? (
                 <>We found {products.length} matching items for <span className="font-medium">"{searchTerm}"</span></>
               ) : (
@@ -94,7 +92,7 @@ const Results = () => {
               {isSearching ? (
                 renderSkeletons()
               ) : (
-                <div className="space-y-4 animate-slide-up">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 animate-slide-up">
                   {products.length > 0 ? (
                     formatProducts(products)
                       .sort((a, b) => a.price - b.price)
@@ -106,7 +104,7 @@ const Results = () => {
                         />
                       ))
                   ) : (
-                    <div className="py-12 text-center text-muted-foreground">
+                    <div className="py-12 text-center text-muted-foreground col-span-full">
                       <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                       <p>No products found. Please try another search.</p>
                     </div>
