@@ -29,23 +29,24 @@ const ProxySelector = ({ proxyIndex, setProxyIndex, disabled = false }: ProxySel
     <div className="flex flex-col gap-2">
       <label className="text-sm text-gray-500">Select CORS Proxy:</label>
       <div className="flex gap-2">
-        <Select 
-          value={String(proxyIndex)} 
-          onValueChange={handleProxyChange}
-          disabled={disabled}
-          className="flex-1"
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select a CORS proxy" />
-          </SelectTrigger>
-          <SelectContent>
-            {CORS_PROXIES.map((proxy, index) => (
-              <SelectItem key={proxy} value={String(index)}>
-                Proxy {index + 1}: {proxy.substring(0, 30)}...
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex-1">
+          <Select 
+            value={String(proxyIndex)} 
+            onValueChange={handleProxyChange}
+            disabled={disabled}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a CORS proxy" />
+            </SelectTrigger>
+            <SelectContent>
+              {CORS_PROXIES.map((proxy, index) => (
+                <SelectItem key={proxy} value={String(index)}>
+                  Proxy {index + 1}: {proxy.substring(0, 30)}...
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         
         <Button 
           onClick={saveProxy} 
