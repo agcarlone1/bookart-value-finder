@@ -50,6 +50,11 @@ export interface LensApiResponse {
   search_parameters: SearchParameters;
   exact_matches?: ExactMatch[];
   visual_matches?: ExactMatch[];
+  knowledge_graph?: {
+    title?: string;
+    type?: string;
+    description?: string;
+  };
   error?: string;
 }
 

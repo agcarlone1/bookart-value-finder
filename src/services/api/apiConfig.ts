@@ -71,7 +71,7 @@ export const getApiUrl = (endpoint: string, params: Record<string, string>): str
   return `${currentProxy}${encodeURIComponent(directUrl)}`;
 };
 
-// Common request options with customization
+// Enhanced request options with customization and User-Agent
 export const getRequestOptions = (
   signal: AbortSignal, 
   options: RequestInit = {}
@@ -80,6 +80,7 @@ export const getRequestOptions = (
   headers: {
     'Accept': 'application/json',
     'Cache-Control': 'no-cache',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
     ...options.headers,
   },
   signal,
@@ -109,4 +110,26 @@ export const handleApiError = (error: unknown): never => {
   } else {
     throw new Error(String(error));
   }
+};
+
+// Book-specific search parameters
+export const getBookSearchParams = (query: string): Record<string, string> => {
+  return {
+    'engine': 'google_shopping',
+    'q': `${query} book`,
+    'gl': 'us',
+    'hl': 'en',
+    'tbm': 'shop',
+    'tbs': 'vw:l,mr:1,pdtr0:936965|936966', // Filter for books
+  };
+};
+
+// Enhanced general search parameters
+export const getGeneralSearchParams = (query: string): Record<string, string> => {
+  return {
+    'engine': 'google_shopping',
+    'q': query,
+    'gl': 'us',
+    'hl': 'en'
+  };
 };
