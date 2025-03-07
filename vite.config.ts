@@ -28,6 +28,18 @@ export default defineConfig(({ mode }) => ({
             console.log('Received Response from:', req.url, proxyRes.statusCode);
           });
         },
+        bypass: function(req, res) {
+          // Handle the health endpoint directly in Vite when the server isn't running
+          if (req.url === '/api/health') {
+            res.end(JSON.stringify({ 
+              status: 'ok', 
+              message: 'API server is running (mocked by Vite)',
+              environment: 'development'
+            }));
+            return true;
+          }
+          return false;
+        }
       }
     }
   },

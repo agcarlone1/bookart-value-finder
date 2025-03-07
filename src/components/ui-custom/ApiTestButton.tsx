@@ -12,6 +12,7 @@ import MockDataToggle from './ApiTest/MockDataToggle';
 import TestApiButton from './ApiTest/TestApiButton';
 import TestResultDisplay from './ApiTest/TestResultDisplay';
 import EndpointCheck from './ApiTest/EndpointCheck';
+import HealthCheck from './ApiTest/HealthCheck';
 
 const ApiTestButton = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -106,6 +107,7 @@ const ApiTestButton = () => {
     <div className="space-y-4 p-4 border rounded-lg">
       <h3 className="font-medium text-lg">API Connection Test</h3>
       
+      <HealthCheck />
       <EndpointCheck />
       
       <div className="space-y-4">
