@@ -36,9 +36,11 @@ export default defineConfig(({ mode }) => ({
               message: 'API server is running (mocked by Vite)',
               environment: 'development'
             }));
-            return true;
+            // Return undefined instead of true to match the expected type signature
+            return undefined;
           }
-          return false;
+          // Return undefined instead of false
+          return undefined;
         }
       }
     }
