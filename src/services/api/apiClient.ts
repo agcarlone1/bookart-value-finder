@@ -13,6 +13,7 @@ export const fetchImageSearchResults = async (imageUrl: string) => {
     
     // Return mock data with a successful response
     return {
+      success: true,
       search_metadata: {
         id: 'mock-lens-id',
         status: 'Success (Mock)',
@@ -35,6 +36,7 @@ export const fetchImageSearchResults = async (imageUrl: string) => {
   } catch (error) {
     console.error("Error in client-side image search:", error);
     return {
+      success: false,
       error: error instanceof Error ? error.message : 'Unknown error in image search',
       search_metadata: {
         id: '',

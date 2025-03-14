@@ -4,6 +4,7 @@ import { ShoppingResult, SearchOptions } from '@/services/api/types';
 import { searchProducts } from '@/services/api/shoppingSearchService';
 import { toast } from "@/components/ui/use-toast"
 import { mockSearchResults } from '@/services/api/mockData';
+import { useNavigate } from 'react-router-dom';
 
 interface SearchContextProps {
   searchTerm: string;
@@ -27,6 +28,7 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isMockData, setIsMockData] = useState<boolean>(true); // Always use mock data
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const uploadAndGetImageUrl = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -133,6 +135,9 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
 
       console.log('Search completed, found results:', results.length);
       setSearchResults(results);
+      
+      // Automatically navigate to results page after successful search
+      navigate('/results');
     } catch (error) {
       console.error('Search failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'An error occurred during the search. Please try again.';
@@ -143,7 +148,7 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
         variant: 'destructive'
       });
     }
-  }, [handleTextSearch]);
+  }, [handleTextSearch, navigate]);
 
   return {
     searchTerm,
