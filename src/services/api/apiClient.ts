@@ -9,14 +9,19 @@ export const fetchImageSearchResults = async (imageUrl: string) => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    console.log("Using mock data for image search results");
+    console.log("Using mock data for image search results (OpenAI simulation)");
     
-    // Return mock data with a successful response
+    // In a real implementation, we would call OpenAI API here with:
+    // 1. Convert the image to base64 if it's a File
+    // 2. Send to OpenAI's Vision API with a prompt like:
+    // "Identify this product and find similar items available for purchase.
+    //  If it's a book, include the title, author, and edition if visible."
+    
     return {
       success: true,
       search_metadata: {
-        id: 'mock-lens-id',
-        status: 'Success (Mock)',
+        id: 'openai-simulation',
+        status: 'Success (OpenAI Simulated)',
         json_endpoint: '',
         created_at: new Date().toISOString(),
         processed_at: new Date().toISOString(),
@@ -25,12 +30,14 @@ export const fetchImageSearchResults = async (imageUrl: string) => {
         total_time_taken: 0
       },
       search_parameters: {
-        engine: 'google_lens_exact_matches',
+        engine: 'openai_vision',
         url: imageUrl.substring(0, 20) + '...',
       },
       exact_matches: mockSearchResults.map((item, index) => ({
         ...item,
-        title: `Image Search Result ${index + 1}`,
+        title: `${index === 0 ? "Recommended Book: " : "Similar Item: "} ${item.title}`,
+        source: "OpenAI Vision Analysis",
+        position: index + 1
       }))
     };
   } catch (error) {
@@ -49,7 +56,7 @@ export const fetchImageSearchResults = async (imageUrl: string) => {
         total_time_taken: 0
       },
       search_parameters: {
-        engine: 'google_lens_exact_matches'
+        engine: 'openai_vision'
       }
     };
   }

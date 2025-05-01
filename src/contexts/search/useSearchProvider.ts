@@ -1,10 +1,10 @@
-
 import { useState, useCallback } from 'react';
 import { ShoppingResult, SearchOptions } from '@/services/api/types';
 import { searchProducts } from '@/services/api/shoppingSearchService';
 import { toast } from "@/components/ui/use-toast"
 import { mockSearchResults } from '@/services/api/mockData';
 import { useNavigate } from 'react-router-dom';
+import { fetchImageSearchResults } from '@/services/api/apiClient';
 
 interface SearchContextProps {
   searchTerm: string;
@@ -89,20 +89,20 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
           imageUrl = await uploadAndGetImageUrl(value);
         } catch (err) {
           console.error('Error uploading image:', err);
-          // Continue with mock data even if image upload fails
+          throw new Error('Failed to process image');
         }
       }
       
-      console.log('Using mock data for image search');
+      console.log('Sending image to OpenAI API (simulated)');
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // In a real implementation, this would call the actual OpenAI API
+      const response = await fetchImageSearchResults(imageUrl);
       
-      // Return mock data with customized titles to simulate image results
-      return mockSearchResults.map((result, index) => ({
-        ...result,
-        title: `${typeof value === 'string' ? 'URL' : 'Image'} Search Result ${index + 1}`,
-      }));
+      if (!response.success) {
+        throw new Error(response.error || 'Image search failed');
+      }
+      
+      return response.exact_matches;
     } catch (error) {
       console.error('Image search error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to search image';
@@ -148,7 +148,7 @@ const useSearchProvider = ({ children }: SearchProviderProps) => {
         variant: 'destructive'
       });
     }
-  }, [handleTextSearch, navigate]);
+  }, [handleTextSearch, handleImageSearch, navigate]);
 
   return {
     searchTerm,
